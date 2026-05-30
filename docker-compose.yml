@@ -1,0 +1,54 @@
+services:
+  devbox-app:
+    container_name: devbox-app
+    build: .
+    ports:
+      - "25:25"
+    expose:
+      - "8080"
+    environment:
+      - SMTP_PORT=25
+      - HTTP_PORT=8080
+      - REDIS_URL=redis://devbox-redis:6379/0
+      - HMAC_SECRET=${HMAC_SECRET}
+      - SERVER_IP=${SERVER_IP}
+      - INBOX_TTL=${INBOX_TTL:-72h}
+    depends_on:
+      devbox-redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  devbox-web:
+    container_name: devbox-web
+    build: ./web
+    expose:
+      - "3000"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000"]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+    depends_on:
+      - devbox-app
+    networks:
+      - default
+      - cloudflared
+    restart: unless-stopped
+
+  devbox-redis:
+    container_name: devbox-redis
+    image: redis:7-alpine
+    command: redis-server --appendonly yes
+    volumes:
+      - ./data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+    restart: unless-stopped
+
+networks:
+  cloudflared:
+    external: true
