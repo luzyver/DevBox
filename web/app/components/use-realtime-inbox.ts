@@ -97,13 +97,14 @@ export function useRealtimeInbox(address: string) {
           try {
             const msg: MessageSummary = JSON.parse(ev.data)
             addMessage(msg)
-            // Play notification sound
             playNotifySound()
             if (Notification.permission === 'granted') {
-              new Notification(`New email from ${msg.from}`, {
-                body: msg.subject || '(no subject)',
-                icon: '/icon.png',
-              })
+              setTimeout(() => {
+                new Notification(`New email from ${msg.from}`, {
+                  body: msg.subject || '(no subject)',
+                  icon: '/icon.png',
+                })
+              }, 400)
             }
           } catch { /* ignore parse errors */ }
         }
