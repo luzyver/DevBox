@@ -1,17 +1,13 @@
 package web
 
 import (
-	"bufio"
-	"context"
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"net/url"
 	"strings"
-	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
@@ -132,52 +128,6 @@ func Start(cfg *config.Config, s *store.Store) {
 		}
 		token := signAddress(body.Address, cfg.HMACSecret)
 		return c.JSON(fiber.Map{"token": token})
-	})
-
-	api.Get("/inbox/:address/stream", func(c *fiber.Ctx) error {
-		address := c.Params("address")
-		token := c.Query("token")
-		expected := signAddress(address, cfg.HMACSecret)
-		if token == "" || !hmac.Equal([]byte(token), []byte(expected)) {
-			return c.Status(403).JSON(fiber.Map{"error": "forbidden"})
-		}
-
-		c.Set("Content-Type", "text/event-stream")
-		c.Set("Cache-Control", "no-cache")
-		c.Set("Connection", "keep-alive")
-		c.Set("X-Accel-Buffering", "no")
-
-		c.Context().SetBodyStreamWriter(func(w *bufio.Writer) {
-			sub := s.Redis.Subscribe(context.Background(), "notify:"+address)
-			defer sub.Close()
-			ch := sub.Channel()
-
-			// Send initial ping
-			fmt.Fprintf(w, ": ping\n\n")
-			w.Flush()
-
-			ticker := time.NewTicker(15 * time.Second)
-			defer ticker.Stop()
-
-			for {
-				select {
-				case msg, ok := <-ch:
-					if !ok {
-						return
-					}
-					fmt.Fprintf(w, "data: %s\n\n", msg.Payload)
-					if err := w.Flush(); err != nil {
-						return
-					}
-				case <-ticker.C:
-					fmt.Fprintf(w, ": ping\n\n")
-					if err := w.Flush(); err != nil {
-						return
-					}
-				}
-			}
-		})
-		return nil
 	})
 
 	api.Get("/inbox/:address", func(c *fiber.Ctx) error {

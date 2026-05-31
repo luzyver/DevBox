@@ -24,10 +24,12 @@ func main() {
 
 	go smtp.Start(cfg, s)
 	go web.Start(cfg, s)
+	go web.StartSSE(cfg, s)
 	go dns.StartChecker(s, cfg.ServerIP, 5*time.Minute)
 
 	log.Printf("SMTP listening on :%s", cfg.SMTPPort)
 	log.Printf("HTTP listening on :%s", cfg.HTTPPort)
+	log.Printf("SSE listening on :8081")
 
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
