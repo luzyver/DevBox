@@ -60,7 +60,7 @@ export function TempMailPage() {
 
   // Restore or generate on domain ready
   useEffect(() => {
-    if (!domain) return
+    if (!domain || !nameSets.length) return
     const savedHistory = JSON.parse(localStorage.getItem('inbox_history') || '[]')
     setHistory(savedHistory)
     const saved = localStorage.getItem('inbox_address')
@@ -71,7 +71,7 @@ export function TempMailPage() {
     } else if (!address) {
       generateNew()
     }
-  }, [domain])
+  }, [domain, nameSets])
 
   // Toast on new messages
   useEffect(() => {
