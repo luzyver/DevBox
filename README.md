@@ -90,6 +90,23 @@ docker compose up -d --build
 | `HMAC_SECRET` | Secret for inbox token signing |
 | `SERVER_IP` | Public IP VPS (for DNS verification) |
 | `INBOX_TTL` | Inbox expiry duration (e.g. `72h`) |
+| `TURNSTILE_SECRET` | Cloudflare Turnstile secret key (backend) |
+| `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | Cloudflare Turnstile site key (frontend, build-time) |
+
+## Anti-Spam (Cloudflare Turnstile)
+
+Turnstile challenge ditampilkan saat user pertama kali generate email baru. User yang sudah punya inbox di localStorage tidak perlu solve ulang.
+
+Setup:
+1. Buat widget di [Cloudflare Dashboard → Turnstile](https://dash.cloudflare.com/?to=/:account/turnstile)
+2. Tambahkan ke `.env`:
+   ```
+   TURNSTILE_SECRET=0x4AAAAAAA...
+   NEXT_PUBLIC_TURNSTILE_SITE_KEY=0x4AAAAAAA...
+   ```
+3. Rebuild: `docker compose up -d --build`
+
+Jika env kosong, Turnstile di-skip (backward compatible).
 
 ## Adding a New Domain
 

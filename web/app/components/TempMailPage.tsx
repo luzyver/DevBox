@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { MessageSummary } from './types'
 import { deleteEmail, fetchDomains, claimInbox, setToken } from './api'
 import { useRealtimeInbox } from './use-realtime-inbox'
+import { useTurnstile } from './Turnstile'
 import { InboxToolbar } from './InboxToolbar'
 import { InboxAddressCard } from './InboxAddressCard'
 import { MessageList } from './MessageList'
@@ -27,6 +28,7 @@ export function TempMailPage() {
   const [nameSets, setNameSets] = useState<{first: string[], last: string[]}[]>([])
   const prevCountRef = useRef(0)
   const { toasts, addToast, dismissToast } = useToast()
+  const { containerRef: turnstileRef, getToken: getTurnstileToken, reset: resetTurnstile, enabled: turnstileEnabled } = useTurnstile()
 
   const { messages, loading, error, connectionState, refresh, removeMessage, newMessageIds } =
     useRealtimeInbox(address)
@@ -91,7 +93,7 @@ export function TempMailPage() {
     })
   }
 
-  function generateNew() {
+  async function generateNew() {
     if (!domain || !nameSets.length) return
     const set = nameSets[Math.floor(Math.random() * nameSets.length)]
     const f = set.first[Math.floor(Math.random() * set.first.length)]
@@ -99,14 +101,15 @@ export function TempMailPage() {
     const sep = ['.', '_', '-'][Math.floor(Math.random() * 3)]
     const rand = Math.random().toString(36).substring(2, 7)
     const addr = `${f}${sep}${l}-${rand}@${domain}`
-    claimInbox(addr).then((token) => {
-      localStorage.setItem('inbox_address', addr)
-      localStorage.setItem('inbox_token', token)
-      saveToHistory(addr, token)
-      setAddress(addr)
-      setSelected(null)
-      prevCountRef.current = 0
-    })
+    const cfToken = turnstileEnabled ? await getTurnstileToken() : undefined
+    const token = await claimInbox(addr, cfToken)
+    resetTurnstile()
+    localStorage.setItem('inbox_address', addr)
+    localStorage.setItem('inbox_token', token)
+    saveToHistory(addr, token)
+    setAddress(addr)
+    setSelected(null)
+    prevCountRef.current = 0
   }
 
   function handleNewInbox() {
@@ -170,6 +173,8 @@ export function TempMailPage() {
       />
 
       <InboxAddressCard address={address} history={history} onCopy={handleCopy} onSwitch={switchToAddress} copied={copied} />
+
+      {turnstileEnabled && <div ref={turnstileRef} className="flex justify-center py-2" />}
 
       <main className="flex-1 min-h-0 px-4 md:px-6 py-4 md:py-6">
         <div className="flex flex-col md:flex-row gap-4 md:gap-6 h-full">

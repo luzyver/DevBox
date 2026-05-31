@@ -4,6 +4,9 @@ import (
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/hex"
+	"encoding/json"
+	"net/http"
+	"net/url"
 	"strings"
 
 	"github.com/gofiber/fiber/v2"
@@ -23,6 +26,20 @@ func verifyToken(c *fiber.Ctx, address, secret string) bool {
 	auth := c.Get("Authorization")
 	token := strings.TrimPrefix(auth, "Bearer ")
 	return hmac.Equal([]byte(token), []byte(signAddress(address, secret)))
+}
+
+func verifyTurnstile(token, secret string) bool {
+	resp, err := http.PostForm("https://challenges.cloudflare.com/turnstile/v0/siteverify",
+		url.Values{"secret": {secret}, "response": {token}})
+	if err != nil {
+		return false
+	}
+	defer resp.Body.Close()
+	var result struct {
+		Success bool `json:"success"`
+	}
+	json.NewDecoder(resp.Body).Decode(&result)
+	return result.Success
 }
 
 func Start(cfg *config.Config, s *store.Store) {
@@ -84,10 +101,14 @@ func Start(cfg *config.Config, s *store.Store) {
 
 	api.Post("/inbox/claim", func(c *fiber.Ctx) error {
 		var body struct {
-			Address string `json:"address"`
+			Address        string `json:"address"`
+			TurnstileToken string `json:"turnstile_token"`
 		}
 		if err := c.BodyParser(&body); err != nil || body.Address == "" {
 			return c.Status(400).JSON(fiber.Map{"error": "address required"})
+		}
+		if cfg.TurnstileSecret != "" && !verifyTurnstile(body.TurnstileToken, cfg.TurnstileSecret) {
+			return c.Status(403).JSON(fiber.Map{"error": "turnstile verification failed"})
 		}
 		token := signAddress(body.Address, cfg.HMACSecret)
 		return c.JSON(fiber.Map{"token": token})

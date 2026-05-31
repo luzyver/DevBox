@@ -6,11 +6,11 @@ export function setToken(token: string) {
   currentToken = token
 }
 
-export async function claimInbox(address: string): Promise<string> {
+export async function claimInbox(address: string, turnstileToken?: string): Promise<string> {
   const res = await fetch('/api/inbox/claim', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ address }),
+    body: JSON.stringify({ address, turnstile_token: turnstileToken }),
   })
   if (!res.ok) throw new Error('Failed to claim inbox')
   const data = await res.json()
