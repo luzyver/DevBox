@@ -56,10 +56,6 @@ export function TempMailPage() {
     } else if (!address) {
       generateNew()
     }
-    // Request notification permission
-    if ('Notification' in window && Notification.permission === 'default') {
-      Notification.requestPermission()
-    }
   }, [domain])
 
   // Toast on new messages
@@ -84,6 +80,9 @@ export function TempMailPage() {
 
   async function generateNew() {
     if (!domain) return
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission()
+    }
     const cfToken = turnstileEnabled ? await getTurnstileToken() : undefined
     const { address: addr, token } = await generateInbox(domain, cfToken)
     localStorage.setItem('inbox_address', addr)

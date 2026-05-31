@@ -3,6 +3,7 @@ package smtp
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"io"
 	"log"
 	"mime"
@@ -152,7 +153,7 @@ func parseMultipartRecursive(r io.Reader, boundary string) (text, html string, a
 		disposition, _, _ := mime.ParseMediaType(part.Header.Get("Content-Disposition"))
 
 		if disposition == "attachment" || (disposition == "" && !strings.HasPrefix(partType, "text/") && !strings.HasPrefix(partType, "multipart/")) {
-			data, _ := io.ReadAll(part)
+			data := readPartBody(part)
 			if len(data) > 0 && len(data) <= 5*1024*1024 {
 				filename := part.FileName()
 				if filename == "" {
@@ -174,11 +175,9 @@ func parseMultipartRecursive(r io.Reader, boundary string) (text, html string, a
 			}
 			attachments = append(attachments, innerAtt...)
 		} else if partType == "text/plain" && text == "" {
-			b, _ := io.ReadAll(part)
-			text = string(b)
+			text = string(readPartBody(part))
 		} else if partType == "text/html" && html == "" {
-			b, _ := io.ReadAll(part)
-			html = string(b)
+			html = string(readPartBody(part))
 		}
 		part.Close()
 	}
@@ -187,3 +186,26 @@ func parseMultipartRecursive(r io.Reader, boundary string) (text, html string, a
 
 func (s *session) Reset()        {}
 func (s *session) Logout() error { return nil }
+
+func readPartBody(part *multipart.Part) []byte {
+	encoding := strings.ToLower(part.Header.Get("Content-Transfer-Encoding"))
+	raw, _ := io.ReadAll(part)
+	switch encoding {
+	case "base64":
+		decoded, err := base64.StdEncoding.DecodeString(strings.ReplaceAll(string(raw), "\n", ""))
+		if err != nil {
+			// Try RawStdEncoding for unpadded
+			decoded, err = base64.RawStdEncoding.DecodeString(strings.ReplaceAll(string(raw), "\n", ""))
+			if err != nil {
+				return raw
+			}
+		}
+		return decoded
+	case "quoted-printable":
+		// mime/multipart already decodes QP for text parts via Part reader,
+		// but just in case, return raw
+		return raw
+	default:
+		return raw
+	}
+}
