@@ -28,7 +28,7 @@ export function TempMailPage() {
   const [nameSets, setNameSets] = useState<{first: string[], last: string[]}[]>([])
   const prevCountRef = useRef(0)
   const { toasts, addToast, dismissToast } = useToast()
-  const { containerRef: turnstileRef, getToken: getTurnstileToken, reset: resetTurnstile, enabled: turnstileEnabled } = useTurnstile()
+  const { getToken: getTurnstileToken, TurnstileModal, enabled: turnstileEnabled } = useTurnstile()
 
   const { messages, loading, error, connectionState, refresh, removeMessage, newMessageIds } =
     useRealtimeInbox(address)
@@ -103,7 +103,6 @@ export function TempMailPage() {
     const addr = `${f}${sep}${l}-${rand}@${domain}`
     const cfToken = turnstileEnabled ? await getTurnstileToken() : undefined
     const token = await claimInbox(addr, cfToken)
-    resetTurnstile()
     localStorage.setItem('inbox_address', addr)
     localStorage.setItem('inbox_token', token)
     saveToHistory(addr, token)
@@ -174,7 +173,7 @@ export function TempMailPage() {
 
       <InboxAddressCard address={address} history={history} onCopy={handleCopy} onSwitch={switchToAddress} copied={copied} />
 
-      {turnstileEnabled && <div ref={turnstileRef} className="flex justify-center py-2" />}
+      {TurnstileModal}
 
       <main className="flex-1 min-h-0 px-4 md:px-6 py-4 md:py-6">
         <div className="flex flex-col md:flex-row gap-4 md:gap-6 h-full">
