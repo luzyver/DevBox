@@ -13,6 +13,22 @@ export function useRealtimeInbox(address: string) {
   const esRef = useRef<EventSource | null>(null)
   const mountedRef = useRef(true)
 
+  const playNotifySound = useCallback(() => {
+    try {
+      const ctx = new AudioContext()
+      const osc = ctx.createOscillator()
+      const gain = ctx.createGain()
+      osc.connect(gain)
+      gain.connect(ctx.destination)
+      osc.frequency.setValueAtTime(880, ctx.currentTime)
+      osc.frequency.setValueAtTime(660, ctx.currentTime + 0.1)
+      gain.gain.setValueAtTime(0.3, ctx.currentTime)
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3)
+      osc.start()
+      osc.stop(ctx.currentTime + 0.3)
+    } catch { /* silent */ }
+  }, [])
+
   const addMessage = useCallback((msg: MessageSummary) => {
     setMessages(prev => {
       if (prev.some(m => m.id === msg.id)) return prev
@@ -81,10 +97,12 @@ export function useRealtimeInbox(address: string) {
           try {
             const msg: MessageSummary = JSON.parse(ev.data)
             addMessage(msg)
+            // Play notification sound
+            playNotifySound()
             if (Notification.permission === 'granted') {
               new Notification(`New email from ${msg.from}`, {
                 body: msg.subject || '(no subject)',
-                icon: '/favicon.ico',
+                icon: '/icon.png',
               })
             }
           } catch { /* ignore parse errors */ }
