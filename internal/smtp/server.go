@@ -81,17 +81,32 @@ func (s *session) Data(r io.Reader) error {
 	if addr, err := mail.ParseAddress(msg.Header.Get("From")); err == nil {
 		from = addr.Address
 	}
-	textBody, htmlBody := extractParts(msg)
+	textBody, htmlBody, attachments := extractParts(msg)
 
 	for _, to := range s.to {
+		emailID := uuid.NewString()
 		email := &store.Email{
-			ID:      uuid.NewString(),
-			From:    from,
-			To:      to,
-			Subject: subject,
-			Body:    textBody,
-			HTML:    htmlBody,
-			Date:    time.Now().Unix(),
+			ID:          emailID,
+			From:        from,
+			To:          to,
+			Subject:     subject,
+			Body:        textBody,
+			HTML:        htmlBody,
+			Date:        time.Now().Unix(),
+			Attachments: make([]store.Attachment, 0, len(attachments)),
+		}
+		for _, a := range attachments {
+			att := store.Attachment{
+				ID:          uuid.NewString(),
+				Filename:    a.filename,
+				ContentType: a.contentType,
+				Size:        len(a.data),
+			}
+			if err := s.b.store.SaveAttachment(context.Background(), emailID, att.ID, a.data); err != nil {
+				log.Println("save attachment error:", err)
+				continue
+			}
+			email.Attachments = append(email.Attachments, att)
 		}
 		if err := s.b.store.SaveEmail(context.Background(), email); err != nil {
 			log.Println("save error:", err)
@@ -100,77 +115,70 @@ func (s *session) Data(r io.Reader) error {
 	return nil
 }
 
-func extractParts(msg *mail.Message) (text, html string) {
+type rawAttachment struct {
+	filename    string
+	contentType string
+	data        []byte
+}
+
+func extractParts(msg *mail.Message) (text, html string, attachments []rawAttachment) {
 	contentType := msg.Header.Get("Content-Type")
 	mediaType, params, err := mime.ParseMediaType(contentType)
 	if err != nil {
-		// Fallback: treat entire body as text
 		b, _ := io.ReadAll(msg.Body)
-		return string(b), ""
+		return string(b), "", nil
 	}
 
 	if strings.HasPrefix(mediaType, "multipart/") {
-		mr := multipart.NewReader(msg.Body, params["boundary"])
-		for {
-			part, err := mr.NextPart()
-			if err != nil {
-				break
-			}
-			partType, _, _ := mime.ParseMediaType(part.Header.Get("Content-Type"))
-			partBody, _ := io.ReadAll(part)
-			switch partType {
-			case "text/plain":
-				if text == "" {
-					text = string(partBody)
-				}
-			case "text/html":
-				if html == "" {
-					html = string(partBody)
-				}
-			case "multipart/alternative":
-				// Nested multipart
-				innerText, innerHTML := parseMultipart(partBody, part.Header.Get("Content-Type"))
-				if text == "" {
-					text = innerText
-				}
-				if html == "" {
-					html = innerHTML
-				}
-			}
-			part.Close()
-		}
+		text, html, attachments = parseMultipartRecursive(msg.Body, params["boundary"])
 		return
 	}
 
 	b, _ := io.ReadAll(msg.Body)
 	if strings.HasPrefix(mediaType, "text/html") {
-		return "", string(b)
+		return "", string(b), nil
 	}
-	return string(b), ""
+	return string(b), "", nil
 }
 
-func parseMultipart(body []byte, contentType string) (text, html string) {
-	_, params, err := mime.ParseMediaType(contentType)
-	if err != nil {
-		return string(body), ""
-	}
-	mr := multipart.NewReader(bytes.NewReader(body), params["boundary"])
+func parseMultipartRecursive(r io.Reader, boundary string) (text, html string, attachments []rawAttachment) {
+	mr := multipart.NewReader(r, boundary)
 	for {
 		part, err := mr.NextPart()
 		if err != nil {
 			break
 		}
-		partType, _, _ := mime.ParseMediaType(part.Header.Get("Content-Type"))
-		partBody, _ := io.ReadAll(part)
-		switch partType {
-		case "text/plain":
+		partType, partParams, _ := mime.ParseMediaType(part.Header.Get("Content-Type"))
+		disposition, _, _ := mime.ParseMediaType(part.Header.Get("Content-Disposition"))
+
+		if disposition == "attachment" || (disposition == "" && !strings.HasPrefix(partType, "text/") && !strings.HasPrefix(partType, "multipart/")) {
+			data, _ := io.ReadAll(part)
+			if len(data) > 0 && len(data) <= 5*1024*1024 {
+				filename := part.FileName()
+				if filename == "" {
+					filename = "attachment"
+				}
+				attachments = append(attachments, rawAttachment{
+					filename:    filename,
+					contentType: partType,
+					data:        data,
+				})
+			}
+		} else if strings.HasPrefix(partType, "multipart/") {
+			innerText, innerHTML, innerAtt := parseMultipartRecursive(part, partParams["boundary"])
 			if text == "" {
-				text = string(partBody)
+				text = innerText
 			}
-		case "text/html":
 			if html == "" {
-				html = string(partBody)
+				html = innerHTML
 			}
+			attachments = append(attachments, innerAtt...)
+		} else if partType == "text/plain" && text == "" {
+			b, _ := io.ReadAll(part)
+			text = string(b)
+		} else if partType == "text/html" && html == "" {
+			b, _ := io.ReadAll(part)
+			html = string(b)
 		}
 		part.Close()
 	}

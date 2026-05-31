@@ -1,3 +1,10 @@
+export interface Attachment {
+  id: string
+  filename: string
+  content_type: string
+  size: number
+}
+
 export interface MessageSummary {
   id: string
   from: string
@@ -6,6 +13,7 @@ export interface MessageSummary {
   body: string
   date: number
   isNew?: boolean
+  attachments?: Attachment[]
 }
 
 export interface MessageDetail extends MessageSummary {

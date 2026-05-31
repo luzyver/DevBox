@@ -81,6 +81,13 @@ export function useRealtimeInbox(address: string) {
           try {
             const msg: MessageSummary = JSON.parse(ev.data)
             addMessage(msg)
+            // Browser notification when tab not focused
+            if (document.hidden && Notification.permission === 'granted') {
+              new Notification(`New email from ${msg.from}`, {
+                body: msg.subject || '(no subject)',
+                icon: '/favicon.ico',
+              })
+            }
           } catch { /* ignore parse errors */ }
         }
         es.onopen = () => setConnectionState('connected')

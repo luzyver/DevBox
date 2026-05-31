@@ -153,5 +153,18 @@ func Start(cfg *config.Config, s *store.Store) {
 		return c.JSON(fiber.Map{"ok": true})
 	})
 
+	api.Get("/inbox/:address/:id/attachment/:attachId", func(c *fiber.Ctx) error {
+		address := c.Params("address")
+		if !verifyToken(c, address, cfg.HMACSecret) {
+			return c.Status(403).JSON(fiber.Map{"error": "forbidden"})
+		}
+		data, err := s.GetAttachment(c.Context(), c.Params("id"), c.Params("attachId"))
+		if err != nil {
+			return c.Status(404).JSON(fiber.Map{"error": "not found"})
+		}
+		c.Set("Content-Disposition", "attachment")
+		return c.Send(data)
+	})
+
 	app.Listen(":" + cfg.HTTPPort)
 }

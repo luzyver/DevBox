@@ -56,6 +56,10 @@ export function TempMailPage() {
     } else if (!address) {
       generateNew()
     }
+    // Request notification permission
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission()
+    }
   }, [domain])
 
   // Toast on new messages
