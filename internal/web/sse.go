@@ -14,6 +14,14 @@ func StartSSE(cfg *config.Config, s *store.Store) {
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("/api/inbox/{address}/stream", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Headers", "Cache-Control")
+
+		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+
 		address := r.PathValue("address")
 		token := r.URL.Query().Get("token")
 		expected := signAddress(address, cfg.HMACSecret)

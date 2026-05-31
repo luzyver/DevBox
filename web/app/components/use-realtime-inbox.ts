@@ -73,7 +73,8 @@ export function useRealtimeInbox(address: string) {
         // Connect SSE
         const token = getToken()
         if (!token) return
-        const es = new EventSource(`/api/inbox/${address}/stream?token=${token}`)
+        const sseBase = process.env.NEXT_PUBLIC_SSE_URL || ''
+        const es = new EventSource(`${sseBase}/api/inbox/${address}/stream?token=${token}`)
         esRef.current = es
 
         es.onmessage = (ev) => {
