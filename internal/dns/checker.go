@@ -23,6 +23,11 @@ func StartChecker(s *store.Store, serverIP string, interval time.Duration) {
 			log.Println("dns checker: failed to get pending domains:", err)
 		} else {
 			for _, pd := range pending {
+				if time.Since(time.Unix(pd.SubmittedAt, 0)) > 24*time.Hour {
+					s.RemovePendingDomain(ctx, pd.Domain)
+					log.Printf("dns checker: %s removed (pending > 24h)", pd.Domain)
+					continue
+				}
 				mxOk, aOk := Verify(pd.Domain, serverIP)
 				if mxOk && aOk {
 					s.AddActiveDomain(ctx, pd.Domain)

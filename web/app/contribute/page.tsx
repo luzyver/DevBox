@@ -90,22 +90,16 @@ export default function ContributePage() {
                 <tr className="border-t border-border">
                   <td className="px-3 py-2"><span className="bg-accent/10 text-accent font-mono px-2 py-0.5 rounded">MX</span></td>
                   <td className="px-3 py-2 font-mono">yourdomain.com</td>
-                  <td className="px-3 py-2 font-mono">mail.yourdomain.com</td>
+                  <td className="px-3 py-2 font-mono">mail.d-box.tech</td>
                   <td className="px-3 py-2">10</td>
-                </tr>
-                <tr className="border-t border-border">
-                  <td className="px-3 py-2"><span className="bg-quaternary/20 text-foreground font-mono px-2 py-0.5 rounded">A</span></td>
-                  <td className="px-3 py-2 font-mono">mail.yourdomain.com</td>
-                  <td className="px-3 py-2 font-mono">{displayIP}</td>
-                  <td className="px-3 py-2">—</td>
                 </tr>
               </tbody>
             </table>
           </div>
 
           <div className="mt-4 p-3 bg-tertiary/10 border border-tertiary/30 rounded-lg text-sm">
-            <strong>💡 Tip:</strong> The MX record should point to a hostname that resolves to our server IP.
-            The A record on your domain should also point to our server IP. DNS propagation may take up to 48 hours.
+            <strong>💡 Tip:</strong> Just point your MX record to <code className="font-mono bg-muted px-1 rounded">mail.d-box.tech</code> — no need to create an A record.
+            DNS propagation may take up to 48 hours.
           </div>
         </div>
 
