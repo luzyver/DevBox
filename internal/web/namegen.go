@@ -45,9 +45,10 @@ func generateAddress(domain string) string {
 	}
 	f := first[rand.Intn(len(first))]
 	l := last[rand.Intn(len(last))]
-	sep := separators[rand.Intn(len(separators))]
+	sep1 := separators[rand.Intn(len(separators))]
+	sep2 := separators[rand.Intn(len(separators))]
 	suffix := randString(5)
-	return f + sep + l + sep + suffix + "@" + domain
+	return f + sep1 + l + sep2 + suffix + "@" + domain
 }
 
 func randString(n int) string {
