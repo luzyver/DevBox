@@ -146,10 +146,10 @@ export default function ContributePage() {
                 <>
                   <p>⏳ <strong>Pending verification.</strong> {result.message}</p>
                   <ul className="mt-2 space-y-1 ml-4">
-                    <li>{result.mx_ok ? '✅' : '❌'} MX record</li>
-                    <li>{result.a_ok ? '✅' : '❌'} A record</li>
+                    <li>{result.mx_ok ? '✅' : '❌'} MX record found</li>
+                    <li>{result.a_ok ? '✅' : '❌'} MX target resolves to our server</li>
                   </ul>
-                  <p className="mt-2 text-muted-foreground">We check every 5 minutes. Your domain will be activated automatically once DNS is correct.</p>
+                  <p className="mt-2 text-muted-foreground">We check every 5 minutes. Your domain will be activated automatically once DNS propagates.</p>
                 </>
               )}
             </div>
