@@ -18,6 +18,9 @@ services:
     depends_on:
       devbox-redis:
         condition: service_healthy
+    networks:
+      - default
+      - cloudflared
     restart: unless-stopped
 
   devbox-web:
