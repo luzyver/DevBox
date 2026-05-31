@@ -2,91 +2,51 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { ConnectionState, MessageSummary } from './types'
-import { fetchInbox } from './api'
+import { fetchInbox, getToken } from './api'
 
-const POLL_INTERVAL = 5_000
-
-interface UseRealtimeInboxReturn {
-  messages: MessageSummary[]
-  loading: boolean
-  error: string | null
-  connectionState: ConnectionState
-  refresh: () => void
-  removeMessage: (id: string) => void
-  newMessageIds: Set<string>
-}
-
-export function useRealtimeInbox(address: string): UseRealtimeInboxReturn {
+export function useRealtimeInbox(address: string) {
   const [messages, setMessages] = useState<MessageSummary[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [connectionState, setConnectionState] = useState<ConnectionState>('connected')
   const [newMessageIds, setNewMessageIds] = useState<Set<string>>(new Set())
-
-  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
-  const knownIds = useRef<Set<string>>(new Set())
-  const addressRef = useRef(address)
+  const esRef = useRef<EventSource | null>(null)
   const mountedRef = useRef(true)
 
-  addressRef.current = address
-
-  const mergeMessages = useCallback((incoming: MessageSummary[], markNew = false) => {
+  const addMessage = useCallback((msg: MessageSummary) => {
     setMessages(prev => {
-      const map = new Map(prev.map(m => [m.id, m]))
-      const freshIds: string[] = []
-      for (const msg of incoming) {
-        if (!map.has(msg.id)) {
-          freshIds.push(msg.id)
-          map.set(msg.id, { ...msg, isNew: markNew })
-        }
-      }
-      if (markNew && freshIds.length > 0) {
-        setNewMessageIds(prev => {
-          const next = new Set(prev)
-          freshIds.forEach(id => next.add(id))
-          return next
-        })
-        setTimeout(() => {
-          setNewMessageIds(prev => {
-            const next = new Set(prev)
-            freshIds.forEach(id => next.delete(id))
-            return next
-          })
-        }, 5000)
-      }
-      knownIds.current = new Set(map.keys())
-      return Array.from(map.values()).sort((a, b) => b.date - a.date)
+      if (prev.some(m => m.id === msg.id)) return prev
+      return [msg, ...prev]
     })
+    setNewMessageIds(prev => {
+      const next = new Set(prev)
+      next.add(msg.id)
+      return next
+    })
+    setTimeout(() => {
+      setNewMessageIds(prev => {
+        const next = new Set(prev)
+        next.delete(msg.id)
+        return next
+      })
+    }, 5000)
   }, [])
 
-  const doFetch = useCallback(async (signal?: AbortSignal, isInitial = false) => {
-    if (!addressRef.current) return
+  const refresh = useCallback(async () => {
+    if (!address) return
     try {
-      if (isInitial) setLoading(true)
-      const data = await fetchInbox(addressRef.current, signal)
-      if (!mountedRef.current) return
-      if (isInitial) {
-        knownIds.current = new Set(data.map(m => m.id))
+      const data = await fetchInbox(address)
+      if (mountedRef.current) {
         setMessages(data.sort((a, b) => b.date - a.date))
-      } else {
-        mergeMessages(data, true)
+        setError(null)
       }
-      setError(null)
-    } catch (e: unknown) {
-      if (e instanceof Error && e.name === 'AbortError') return
+    } catch {
       if (mountedRef.current) setError('Failed to load inbox')
-    } finally {
-      if (mountedRef.current) setLoading(false)
     }
-  }, [mergeMessages])
-
-  const refresh = useCallback(() => {
-    doFetch(undefined, false)
-  }, [doFetch])
+  }, [address])
 
   const removeMessage = useCallback((id: string) => {
     setMessages(prev => prev.filter(m => m.id !== id))
-    knownIds.current.delete(id)
   }, [])
 
   useEffect(() => {
@@ -100,20 +60,51 @@ export function useRealtimeInbox(address: string): UseRealtimeInboxReturn {
     const controller = new AbortController()
     setMessages([])
     setError(null)
-    knownIds.current.clear()
+    setLoading(true)
 
-    doFetch(controller.signal, true).then(() => {
-      if (mountedRef.current) {
-        pollRef.current = setInterval(() => doFetch(), POLL_INTERVAL)
-      }
-    })
+    // Initial fetch then connect SSE
+    fetchInbox(address, controller.signal)
+      .then(data => {
+        if (!mountedRef.current) return
+        setMessages(data.sort((a, b) => b.date - a.date))
+        setError(null)
+        setLoading(false)
+
+        // Connect SSE
+        const token = getToken()
+        if (!token) return
+        const es = new EventSource(`/api/inbox/${address}/stream?token=${token}`)
+        esRef.current = es
+
+        es.onmessage = (ev) => {
+          try {
+            const msg: MessageSummary = JSON.parse(ev.data)
+            addMessage(msg)
+          } catch { /* ignore parse errors */ }
+        }
+        es.onopen = () => setConnectionState('connected')
+        es.onerror = () => {
+          setConnectionState('reconnecting')
+          // EventSource auto-reconnects
+        }
+      })
+      .catch(e => {
+        if (e?.name === 'AbortError') return
+        if (mountedRef.current) {
+          setError('Failed to load inbox')
+          setLoading(false)
+        }
+      })
 
     return () => {
       mountedRef.current = false
       controller.abort()
-      if (pollRef.current) clearInterval(pollRef.current)
+      if (esRef.current) {
+        esRef.current.close()
+        esRef.current = null
+      }
     }
-  }, [address, doFetch])
+  }, [address, addMessage])
 
   return { messages, loading, error, connectionState, refresh, removeMessage, newMessageIds }
 }

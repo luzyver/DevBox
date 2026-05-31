@@ -27,6 +27,7 @@ func (s *Store) SaveEmail(ctx context.Context, email *Email) error {
 	pipe := s.Redis.Pipeline()
 	pipe.RPush(ctx, key, data)
 	pipe.Expire(ctx, key, s.InboxTTL)
+	pipe.Publish(ctx, "notify:"+email.To, data)
 	_, err = pipe.Exec(ctx)
 	return err
 }

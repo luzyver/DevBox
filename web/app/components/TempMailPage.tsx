@@ -172,7 +172,7 @@ export function TempMailPage() {
               </button>
             </div>
 
-            <div className="flex-1 min-h-0 overflow-y-auto">
+            <div className="flex-1 min-h-0 overflow-y-auto p-2">
               {loading ? (
                 <SkeletonList />
               ) : error ? (
