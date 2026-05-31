@@ -134,29 +134,6 @@ func Start(cfg *config.Config, s *store.Store) {
 		return c.JSON(fiber.Map{"token": token})
 	})
 
-	api.Get("/inbox/:address", func(c *fiber.Ctx) error {
-		address := c.Params("address")
-		if !verifyToken(c, address, cfg.HMACSecret) {
-			return c.Status(403).JSON(fiber.Map{"error": "forbidden"})
-		}
-		emails, err := s.GetInbox(c.Context(), address)
-		if err != nil {
-			return c.Status(500).JSON(fiber.Map{"error": err.Error()})
-		}
-		return c.JSON(emails)
-	})
-
-	api.Delete("/inbox/:address/:id", func(c *fiber.Ctx) error {
-		address := c.Params("address")
-		if !verifyToken(c, address, cfg.HMACSecret) {
-			return c.Status(403).JSON(fiber.Map{"error": "forbidden"})
-		}
-		if err := s.DeleteEmail(c.Context(), address, c.Params("id")); err != nil {
-			return c.Status(500).JSON(fiber.Map{"error": err.Error()})
-		}
-		return c.JSON(fiber.Map{"ok": true})
-	})
-
 	api.Get("/inbox/:address/stream", func(c *fiber.Ctx) error {
 		address := c.Params("address")
 		token := c.Query("token")
@@ -168,6 +145,7 @@ func Start(cfg *config.Config, s *store.Store) {
 		c.Set("Content-Type", "text/event-stream")
 		c.Set("Cache-Control", "no-cache")
 		c.Set("Connection", "keep-alive")
+		c.Set("X-Accel-Buffering", "no")
 
 		c.Context().SetBodyStreamWriter(func(w *bufio.Writer) {
 			sub := s.Redis.Subscribe(context.Background(), "notify:"+address)
@@ -200,6 +178,29 @@ func Start(cfg *config.Config, s *store.Store) {
 			}
 		})
 		return nil
+	})
+
+	api.Get("/inbox/:address", func(c *fiber.Ctx) error {
+		address := c.Params("address")
+		if !verifyToken(c, address, cfg.HMACSecret) {
+			return c.Status(403).JSON(fiber.Map{"error": "forbidden"})
+		}
+		emails, err := s.GetInbox(c.Context(), address)
+		if err != nil {
+			return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+		}
+		return c.JSON(emails)
+	})
+
+	api.Delete("/inbox/:address/:id", func(c *fiber.Ctx) error {
+		address := c.Params("address")
+		if !verifyToken(c, address, cfg.HMACSecret) {
+			return c.Status(403).JSON(fiber.Map{"error": "forbidden"})
+		}
+		if err := s.DeleteEmail(c.Context(), address, c.Params("id")); err != nil {
+			return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+		}
+		return c.JSON(fiber.Map{"ok": true})
 	})
 
 	app.Listen(":" + cfg.HTTPPort)
