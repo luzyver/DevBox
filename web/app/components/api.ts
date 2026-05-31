@@ -6,6 +6,18 @@ export function setToken(token: string) {
   currentToken = token
 }
 
+export async function generateInbox(domain: string, turnstileToken?: string): Promise<{ address: string; token: string }> {
+  const res = await fetch('/api/inbox/generate', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ domain, turnstile_token: turnstileToken }),
+  })
+  if (!res.ok) throw new Error('Failed to generate inbox')
+  const data = await res.json()
+  currentToken = data.token
+  return { address: data.address, token: data.token }
+}
+
 export async function claimInbox(address: string, turnstileToken?: string): Promise<string> {
   const res = await fetch('/api/inbox/claim', {
     method: 'POST',

@@ -7,6 +7,7 @@ Disposable temporary email service with multi-domain support and community domai
 - **Backend:** Go (SMTP server + REST API)
 - **Frontend:** Next.js + Tailwind CSS
 - **Database:** Redis (inbox with TTL auto-expire + domain management)
+- **Icons:** Phosphor Icons (duotone)
 - **Infra:** Docker Compose, Cloudflare Tunnel
 
 ## Architecture
@@ -16,9 +17,9 @@ Disposable temporary email service with multi-domain support and community domai
 [Browser]  ─── CF Tunnel ──→ [devbox-web :3000] ──rewrite──→ [devbox-app :8080]
 ```
 
-- SMTP (port 25) exposed langsung ke internet via IP publik VPS
-- Web diakses melalui Cloudflare Tunnel (network `cloudflared`)
-- Next.js proxy `/api/*` ke Go backend secara internal
+- SMTP (port 25) exposed directly to the internet via VPS public IP
+- Web accessed through Cloudflare Tunnel (network `cloudflared`)
+- Next.js proxies `/api/*` to Go backend internally
 
 ## Project Structure
 
@@ -33,7 +34,10 @@ Disposable temporary email service with multi-domain support and community domai
 ├── web/                      # Frontend (Next.js)
 │   ├── app/
 │   │   ├── components/       # UI components
-│   │   └── contribute/       # Domain contribution page
+│   │   ├── contribute/       # Domain contribution page
+│   │   ├── domains/          # Active domains listing
+│   │   ├── faq/              # FAQ page
+│   │   └── privacy/          # Privacy policy page
 │   └── public/names/         # Name datasets for email generation
 ├── docker-compose.yml
 ├── Dockerfile                # Go backend
@@ -46,21 +50,25 @@ Disposable temporary email service with multi-domain support and community domai
 
 ```bash
 cp .env.example .env
-# Edit .env sesuai kebutuhan
+# Edit .env with your values
 ```
 
 ### 2. DNS Records
 
+For the primary domain:
+
 | Record | Name | Value | Proxy |
 |--------|------|-------|-------|
 | MX | yourdomain.com | mail.yourdomain.com (priority 10) | — |
-| A | mail.yourdomain.com | IP VPS | DNS only ☁️ |
+| A | mail.yourdomain.com | VPS IP | DNS only |
+
+Additional domains only need an MX record pointing to `mail.yourdomain.com`.
 
 ### 3. Cloudflare Tunnel
 
-Arahkan public hostname ke `http://devbox-web:3000` di CF Tunnel dashboard.
+Point the public hostname to `http://devbox-web:3000` in the CF Tunnel dashboard.
 
-Pastikan network `cloudflared` sudah ada:
+Ensure the `cloudflared` network exists:
 
 ```bash
 docker network create cloudflared
@@ -69,13 +77,14 @@ docker network create cloudflared
 ### 4. Deploy
 
 ```bash
+cd web && npm install && cd ..
 docker compose up -d --build
 ```
 
 ## Services
 
-| Container | Port | Fungsi |
-|-----------|------|--------|
+| Container | Port | Function |
+|-----------|------|----------|
 | devbox-app | 25, 8080 | SMTP server + REST API |
 | devbox-web | 3000 | Frontend (Next.js) |
 | devbox-redis | 6379 | Inbox storage + domain management |
@@ -88,34 +97,44 @@ docker compose up -d --build
 | `HTTP_PORT` | API listen port |
 | `REDIS_URL` | Redis connection string |
 | `HMAC_SECRET` | Secret for inbox token signing |
-| `SERVER_IP` | Public IP VPS (for DNS verification) |
+| `SERVER_IP` | VPS public IP (for DNS verification) |
 | `INBOX_TTL` | Inbox expiry duration (e.g. `72h`) |
 | `TURNSTILE_SECRET` | Cloudflare Turnstile secret key (backend) |
 | `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | Cloudflare Turnstile site key (frontend, build-time) |
 
 ## Anti-Spam (Cloudflare Turnstile)
 
-Turnstile challenge ditampilkan saat user pertama kali generate email baru. User yang sudah punya inbox di localStorage tidak perlu solve ulang.
+Turnstile challenge is shown when a user generates a new email for the first time. Users who already have an inbox in localStorage do not need to solve it again.
 
 Setup:
-1. Buat widget di [Cloudflare Dashboard → Turnstile](https://dash.cloudflare.com/?to=/:account/turnstile)
-2. Tambahkan ke `.env`:
+1. Create a widget at [Cloudflare Dashboard → Turnstile](https://dash.cloudflare.com/?to=/:account/turnstile)
+2. Add to `.env`:
    ```
    TURNSTILE_SECRET=0x4AAAAAAA...
    NEXT_PUBLIC_TURNSTILE_SITE_KEY=0x4AAAAAAA...
    ```
 3. Rebuild: `docker compose up -d --build`
 
-Jika env kosong, Turnstile di-skip (backward compatible).
+If the env vars are empty, Turnstile is skipped (backward compatible).
 
 ## Adding a New Domain
 
-Domain ditambahkan melalui halaman `/contribute` di web:
+Domains are added via the `/contribute` page:
 
-1. Buka `/contribute`
-2. Setup DNS records sesuai instruksi (MX + A record)
-3. Submit domain
-4. Jika DNS sudah benar → domain langsung aktif
-5. Jika belum → masuk pending, dicek otomatis tiap 5 menit
+1. Open `/contribute`
+2. Set up the MX record as instructed (point to `mail.d-box.tech`)
+3. Submit the domain
+4. If DNS is correct → domain is activated immediately
+5. If not → enters pending state, checked automatically every 5 minutes
 
-Domain yang DNS-nya sudah tidak valid akan otomatis di-deactivate.
+Pending domains that remain unverified for 24 hours are automatically removed. Active domains with invalid DNS are automatically deactivated.
+
+## Pages
+
+| Path | Description |
+|------|-------------|
+| `/` | Main inbox |
+| `/contribute` | Add your domain |
+| `/domains` | List of active domains |
+| `/faq` | Frequently asked questions |
+| `/privacy` | Privacy policy |

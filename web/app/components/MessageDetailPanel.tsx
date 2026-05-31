@@ -1,3 +1,4 @@
+import { ArrowLeft, X } from '@phosphor-icons/react'
 import { MessageSummary } from './types'
 
 interface Props {
@@ -40,8 +41,8 @@ export function MessageDetailPanel({ message, onClose, onDelete }: Props) {
             className="w-8 h-8 flex items-center justify-center rounded-full border-2 border-border hover:border-foreground hover:bg-muted transition-colors"
             aria-label="Close"
           >
-            <span className="md:hidden">←</span>
-            <span className="hidden md:inline">✕</span>
+            <span className="md:hidden"><ArrowLeft className="w-4 h-4" /></span>
+            <span className="hidden md:inline"><X className="w-4 h-4" /></span>
           </button>
         </div>
       </div>

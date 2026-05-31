@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { Envelope, X } from '@phosphor-icons/react'
 
 interface ToastItem {
   id: string
@@ -32,9 +33,9 @@ function Toast({ message, onDismiss }: { message: string; onDismiss: () => void 
         visible ? 'translate-x-0 opacity-100' : 'translate-x-8 opacity-0'
       }`}
     >
-      <span className="w-6 h-6 bg-quaternary rounded-full flex items-center justify-center text-white text-xs">✉</span>
+      <span className="w-6 h-6 bg-quaternary rounded-full flex items-center justify-center text-white text-xs"><Envelope className="w-3.5 h-3.5" weight="fill" /></span>
       <span className="text-sm font-medium flex-1">{message}</span>
-      <button onClick={onDismiss} className="text-muted-foreground hover:text-foreground ml-2">✕</button>
+      <button onClick={onDismiss} className="text-muted-foreground hover:text-foreground ml-2"><X className="w-4 h-4" /></button>
     </div>
   )
 }

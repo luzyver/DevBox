@@ -2,9 +2,10 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { MessageSummary } from './types'
-import { deleteEmail, fetchDomains, claimInbox, setToken } from './api'
+import { deleteEmail, fetchDomains, generateInbox, setToken } from './api'
 import { useRealtimeInbox } from './use-realtime-inbox'
 import { useTurnstile } from './Turnstile'
+import { EnvelopeSimple } from '@phosphor-icons/react'
 import { InboxToolbar } from './InboxToolbar'
 import { InboxAddressCard } from './InboxAddressCard'
 import { MessageList } from './MessageList'
@@ -25,28 +26,12 @@ export function TempMailPage() {
   const [history, setHistory] = useState<{address: string, token: string}[]>([])
   const [showNewModal, setShowNewModal] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null)
-  const [nameSets, setNameSets] = useState<{first: string[], last: string[]}[]>([])
   const prevCountRef = useRef(0)
   const { toasts, addToast, dismissToast } = useToast()
   const { getToken: getTurnstileToken, TurnstileModal, enabled: turnstileEnabled } = useTurnstile()
 
   const { messages, loading, error, connectionState, refresh, removeMessage, newMessageIds } =
     useRealtimeInbox(address)
-
-  // Load name lists
-  useEffect(() => {
-    Promise.all([
-      fetch('/names/western-first.txt').then(r => r.text()),
-      fetch('/names/western-last.txt').then(r => r.text()),
-      fetch('/names/indo-first.txt').then(r => r.text()),
-      fetch('/names/indo-last.txt').then(r => r.text()),
-    ]).then(([wf, wl, inf, inl]) => {
-      setNameSets([
-        { first: wf.trim().split('\n').filter(Boolean), last: wl.trim().split('\n').filter(Boolean) },
-        { first: inf.trim().split('\n').filter(Boolean), last: inl.trim().split('\n').filter(Boolean) },
-      ])
-    })
-  }, [])
 
   // Load domains
   useEffect(() => {
@@ -60,7 +45,7 @@ export function TempMailPage() {
 
   // Restore or generate on domain ready
   useEffect(() => {
-    if (!domain || !nameSets.length) return
+    if (!domain) return
     const savedHistory = JSON.parse(localStorage.getItem('inbox_history') || '[]')
     setHistory(savedHistory)
     const saved = localStorage.getItem('inbox_address')
@@ -71,7 +56,7 @@ export function TempMailPage() {
     } else if (!address) {
       generateNew()
     }
-  }, [domain, nameSets])
+  }, [domain])
 
   // Toast on new messages
   useEffect(() => {
@@ -94,15 +79,9 @@ export function TempMailPage() {
   }
 
   async function generateNew() {
-    if (!domain || !nameSets.length) return
-    const set = nameSets[Math.floor(Math.random() * nameSets.length)]
-    const f = set.first[Math.floor(Math.random() * set.first.length)]
-    const l = set.last[Math.floor(Math.random() * set.last.length)]
-    const sep = ['.', '_', '-'][Math.floor(Math.random() * 3)]
-    const rand = Math.random().toString(36).substring(2, 7)
-    const addr = `${f}${sep}${l}-${rand}@${domain}`
+    if (!domain) return
     const cfToken = turnstileEnabled ? await getTurnstileToken() : undefined
-    const token = await claimInbox(addr, cfToken)
+    const { address: addr, token } = await generateInbox(domain, cfToken)
     localStorage.setItem('inbox_address', addr)
     localStorage.setItem('inbox_token', token)
     saveToHistory(addr, token)
@@ -221,7 +200,7 @@ export function TempMailPage() {
               <div className="h-full flex items-center justify-center card-sticker p-12">
                 <div className="text-center">
                   <div className="w-24 h-24 bg-tertiary/20 rounded-full mx-auto mb-6 flex items-center justify-center">
-                    <span className="text-4xl">📬</span>
+                    <EnvelopeSimple className="w-10 h-10 text-tertiary" weight="duotone" />
                   </div>
                   <h3 className="text-xl font-bold font-[family-name:var(--font-heading)] mb-2">Select an email to read</h3>
                   <p className="text-muted-foreground">Choose a message from the inbox on the left</p>
@@ -234,7 +213,12 @@ export function TempMailPage() {
 
       <footer className="shrink-0 border-t-2 border-border py-3 px-4 md:px-6 flex flex-col md:flex-row items-center justify-between gap-2 text-sm text-muted-foreground">
         <p>© {new Date().getFullYear()} DevBox. Disposable email service.</p>
-        <a href="/contribute" className="hover:text-accent font-medium">+ Contribute a Domain</a>
+        <nav className="flex items-center gap-4">
+          <a href="/domains" className="hover:text-accent font-medium">Domains</a>
+          <a href="/faq" className="hover:text-accent font-medium">FAQ</a>
+          <a href="/privacy" className="hover:text-accent font-medium">Privacy</a>
+          <a href="/contribute" className="hover:text-accent font-medium">Contribute</a>
+        </nav>
       </footer>
 
       <ConfirmModal

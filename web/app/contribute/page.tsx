@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { ArrowLeft, Globe, ListChecks, Rocket, CheckCircle, XCircle, Lightbulb, Clock } from '@phosphor-icons/react'
 
 type SubmitResult = {
   status: 'active' | 'pending'
@@ -55,14 +56,17 @@ export default function ContributePage() {
 
       <header className="px-4 md:px-6 py-4 flex items-center justify-between">
         <Link href="/" className="text-lg font-bold font-[family-name:var(--font-heading)] flex items-center gap-2">
-          ← Back to Inbox
+          <ArrowLeft className="w-4 h-4" /> Back to Inbox
         </Link>
       </header>
 
       <main className="max-w-2xl mx-auto px-4 py-8">
         <div className="text-center mb-8">
+          <div className="flex justify-center mb-3">
+            <Globe className="w-10 h-10 text-accent" />
+          </div>
           <h1 className="text-3xl md:text-4xl font-bold font-[family-name:var(--font-heading)] mb-2">
-            🌐 Contribute a Domain
+            Contribute a Domain
           </h1>
           <p className="text-muted-foreground">
             Add your domain to our temporary email service. DNS is verified automatically.
@@ -71,7 +75,9 @@ export default function ContributePage() {
 
         {/* Instructions */}
         <div className="card-sticker p-6 mb-6">
-          <h2 className="text-xl font-bold mb-4">📋 DNS Setup Instructions</h2>
+          <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+            <ListChecks className="w-5 h-5 text-accent" weight="duotone" /> DNS Setup Instructions
+          </h2>
           <p className="text-muted-foreground mb-4">
             Before submitting, add these DNS records to your domain:
           </p>
@@ -97,15 +103,18 @@ export default function ContributePage() {
             </table>
           </div>
 
-          <div className="mt-4 p-3 bg-tertiary/10 border border-tertiary/30 rounded-lg text-sm">
-            <strong>💡 Tip:</strong> Just point your MX record to <code className="font-mono bg-muted px-1 rounded">mail.d-box.tech</code> — no need to create an A record.
-            DNS propagation may take up to 48 hours.
+          <div className="mt-4 p-3 bg-tertiary/10 border border-tertiary/30 rounded-lg text-sm flex items-start gap-2">
+            <Lightbulb className="w-4 h-4 text-tertiary shrink-0 mt-0.5" />
+            <span>Just point your MX record to <code className="font-mono bg-muted px-1 rounded">mail.d-box.tech</code> — no need to create an A record.
+            DNS propagation may take up to 48 hours.</span>
           </div>
         </div>
 
         {/* Submit form */}
         <div className="card-sticker p-6">
-          <h2 className="text-xl font-bold mb-4">🚀 Submit Your Domain</h2>
+          <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+            <Rocket className="w-5 h-5 text-accent" /> Submit Your Domain
+          </h2>
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
             <div>
               <label htmlFor="domain" className="block text-sm font-semibold mb-1">Domain</label>
@@ -129,8 +138,8 @@ export default function ContributePage() {
           </form>
 
           {error && (
-            <div className="mt-4 p-3 bg-secondary/10 border border-secondary/30 rounded-lg text-sm text-secondary">
-              ❌ {error}
+            <div className="mt-4 p-3 bg-secondary/10 border border-secondary/30 rounded-lg text-sm text-secondary flex items-center gap-2">
+              <XCircle className="w-4 h-4 shrink-0" /> {error}
             </div>
           )}
 
@@ -141,13 +150,13 @@ export default function ContributePage() {
                 : 'bg-tertiary/10 border-tertiary/30 text-foreground'
             }`}>
               {result.status === 'active' ? (
-                <p>✅ <strong>Domain activated!</strong> {result.message}</p>
+                <p className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-quaternary" /> <strong>Domain activated!</strong> {result.message}</p>
               ) : (
                 <>
-                  <p>⏳ <strong>Pending verification.</strong> {result.message}</p>
-                  <ul className="mt-2 space-y-1 ml-4">
-                    <li>{result.mx_ok ? '✅' : '❌'} MX record found</li>
-                    <li>{result.a_ok ? '✅' : '❌'} MX target resolves to our server</li>
+                  <p className="flex items-center gap-2"><Clock className="w-4 h-4 text-tertiary" /> <strong>Pending verification.</strong> {result.message}</p>
+                  <ul className="mt-2 space-y-1 ml-6">
+                    <li className="flex items-center gap-2">{result.mx_ok ? <CheckCircle className="w-4 h-4 text-quaternary" /> : <XCircle className="w-4 h-4 text-secondary" />} MX record found</li>
+                    <li className="flex items-center gap-2">{result.a_ok ? <CheckCircle className="w-4 h-4 text-quaternary" /> : <XCircle className="w-4 h-4 text-secondary" />} MX target resolves to our server</li>
                   </ul>
                   <p className="mt-2 text-muted-foreground">We check every 5 minutes. Your domain will be activated automatically once DNS propagates.</p>
                 </>

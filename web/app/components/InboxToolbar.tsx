@@ -1,3 +1,4 @@
+import { ArrowsClockwise } from '@phosphor-icons/react'
 import { ConnectionState } from './types'
 
 interface Props {
@@ -24,8 +25,8 @@ export function InboxToolbar({ domains, domain, onDomainChange, onNewInbox }: Pr
           >
             {domains.map(d => <option key={d} value={d}>@{d}</option>)}
           </select>
-          <button onClick={onNewInbox} disabled={domains.length === 0} className="btn-secondary !py-1.5 !px-2 md:!py-2 md:!px-4 text-xs md:text-sm shrink-0 disabled:opacity-50 disabled:cursor-not-allowed">
-            ↻ New
+          <button onClick={onNewInbox} disabled={domains.length === 0} className="btn-secondary !py-1.5 !px-2 md:!py-2 md:!px-4 text-xs md:text-sm shrink-0 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1">
+            <ArrowsClockwise className="w-3.5 h-3.5" weight="bold" /> New
           </button>
         </div>
       </div>

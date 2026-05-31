@@ -99,6 +99,22 @@ func Start(cfg *config.Config, s *store.Store) {
 		})
 	})
 
+	api.Post("/inbox/generate", func(c *fiber.Ctx) error {
+		var body struct {
+			Domain         string `json:"domain"`
+			TurnstileToken string `json:"turnstile_token"`
+		}
+		if err := c.BodyParser(&body); err != nil || body.Domain == "" {
+			return c.Status(400).JSON(fiber.Map{"error": "domain required"})
+		}
+		if cfg.TurnstileSecret != "" && !verifyTurnstile(body.TurnstileToken, cfg.TurnstileSecret) {
+			return c.Status(403).JSON(fiber.Map{"error": "turnstile verification failed"})
+		}
+		address := generateAddress(body.Domain)
+		token := signAddress(address, cfg.HMACSecret)
+		return c.JSON(fiber.Map{"address": address, "token": token})
+	})
+
 	api.Post("/inbox/claim", func(c *fiber.Ctx) error {
 		var body struct {
 			Address        string `json:"address"`
