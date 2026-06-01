@@ -25,6 +25,7 @@ export function TempMailPage() {
   const [copied, setCopied] = useState(false)
   const [history, setHistory] = useState<{address: string, token: string}[]>([])
   const [showNewModal, setShowNewModal] = useState(false)
+  const [pendingDomain, setPendingDomain] = useState<string | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null)
   const prevCountRef = useRef(0)
   const { toasts, addToast, dismissToast } = useToast()
@@ -114,14 +115,17 @@ export function TempMailPage() {
     setAddress(entry.address)
     setSelected(null)
     prevCountRef.current = 0
+    const matchedDomain = domains.find(d => entry.address.endsWith(`@${d}`))
+    if (matchedDomain) setDomain(matchedDomain)
   }
 
   function handleDomainChange(d: string) {
-    setDomain(d)
-    setAddress('')
-    setSelected(null)
-    localStorage.removeItem('inbox_address')
-    localStorage.removeItem('inbox_token')
+    if (address) {
+      setPendingDomain(d)
+      setShowNewModal(true)
+    } else {
+      setDomain(d)
+    }
   }
 
   function handleCopy() {
@@ -235,8 +239,17 @@ export function TempMailPage() {
         title="Generate New Inbox?"
         message="Current inbox will still be accessible from history."
         confirmLabel="Generate"
-        onConfirm={() => { setShowNewModal(false); generateNew() }}
-        onCancel={() => setShowNewModal(false)}
+        onConfirm={() => {
+          setShowNewModal(false)
+          if (pendingDomain) {
+            setDomain(pendingDomain)
+            setPendingDomain(null)
+            localStorage.removeItem('inbox_address')
+            localStorage.removeItem('inbox_token')
+          }
+          generateNew()
+        }}
+        onCancel={() => { setShowNewModal(false); setPendingDomain(null) }}
       />
 
       <ConfirmModal
