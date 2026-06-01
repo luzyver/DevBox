@@ -1,17 +1,21 @@
 'use client'
 
 import { useState } from 'react'
+import { Lock, LockOpen, Trash } from '@phosphor-icons/react'
 import { PickerModal } from './PickerModal'
 
 interface Props {
   address: string
   history: { address: string, token: string }[]
+  lockedAddresses: Set<string>
   onCopy: () => void
   onSwitch: (entry: { address: string, token: string }) => void
+  onToggleLock: (addr: string) => void
+  onDeleteHistory: (addr: string) => void
   copied: boolean
 }
 
-export function InboxAddressCard({ address, history, onCopy, onSwitch, copied }: Props) {
+export function InboxAddressCard({ address, history, lockedAddresses, onCopy, onSwitch, onToggleLock, onDeleteHistory, copied }: Props) {
   const [showPicker, setShowPicker] = useState(false)
 
   if (!address) return null
@@ -48,6 +52,24 @@ export function InboxAddressCard({ address, history, onCopy, onSwitch, copied }:
           if (entry.address !== address) onSwitch(entry)
         }}
         onCancel={() => setShowPicker(false)}
+        renderActions={entry => (
+          <>
+            <button
+              onClick={e => { e.stopPropagation(); onToggleLock(entry.address) }}
+              className="p-1 rounded hover:bg-border text-muted-foreground hover:text-foreground transition-colors"
+              title={lockedAddresses.has(entry.address) ? 'Unlock' : 'Lock'}
+            >
+              {lockedAddresses.has(entry.address) ? <LockOpen size={14} /> : <Lock size={14} />}
+            </button>
+            <button
+              onClick={e => { e.stopPropagation(); onDeleteHistory(entry.address) }}
+              className="p-1 rounded hover:bg-border text-muted-foreground hover:text-red-500 transition-colors"
+              title="Delete"
+            >
+              <Trash size={14} />
+            </button>
+          </>
+        )}
       />
     </>
   )

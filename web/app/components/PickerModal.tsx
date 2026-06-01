@@ -1,5 +1,7 @@
 'use client'
 
+import { ReactNode } from 'react'
+
 interface Props<T> {
   open: boolean
   title: string
@@ -8,9 +10,10 @@ interface Props<T> {
   labelOf: (item: T) => string
   onSelect: (item: T) => void
   onCancel: () => void
+  renderActions?: (item: T) => ReactNode
 }
 
-export function PickerModal<T>({ open, title, items, keyOf, labelOf, onSelect, onCancel }: Props<T>) {
+export function PickerModal<T>({ open, title, items, keyOf, labelOf, onSelect, onCancel, renderActions }: Props<T>) {
   if (!open) return null
 
   return (
@@ -25,13 +28,16 @@ export function PickerModal<T>({ open, title, items, keyOf, labelOf, onSelect, o
             <p className="text-sm text-muted-foreground text-center py-8">No items available</p>
           )}
           {items.map(item => (
-            <button
-              key={keyOf(item)}
-              onClick={() => onSelect(item)}
-              className="w-full text-left px-3 py-2.5 rounded-lg hover:bg-muted transition-colors font-mono text-sm truncate"
-            >
-              {labelOf(item)}
-            </button>
+            <div key={keyOf(item)} className="flex items-center gap-1 px-3 py-2 rounded-lg hover:bg-muted transition-colors group">
+              <button onClick={() => onSelect(item)} className="flex-1 text-left font-mono text-sm truncate">
+                {labelOf(item)}
+              </button>
+              {renderActions && (
+                <div className="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                  {renderActions(item)}
+                </div>
+              )}
+            </div>
           ))}
         </div>
         <div className="shrink-0 border-t-2 border-border p-3 flex justify-end">

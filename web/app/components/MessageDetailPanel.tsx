@@ -1,4 +1,4 @@
-import { ArrowLeft, X, Paperclip, DownloadSimple } from '@phosphor-icons/react'
+import { ArrowLeft, X, Paperclip, DownloadSimple, Trash } from '@phosphor-icons/react'
 import { MessageSummary } from './types'
 import { getToken } from './api'
 
@@ -58,7 +58,7 @@ export function MessageDetailPanel({ message, onClose, onDelete }: Props) {
             className="w-8 h-8 flex items-center justify-center rounded-full border-2 border-border hover:border-red-500 hover:bg-red-50 transition-colors"
             aria-label="Delete email"
           >
-            🗑
+            <Trash className="w-4 h-4" />
           </button>
           <button
             onClick={onClose}

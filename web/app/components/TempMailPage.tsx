@@ -24,6 +24,7 @@ export function TempMailPage() {
   const [selected, setSelected] = useState<MessageSummary | null>(null)
   const [copied, setCopied] = useState(false)
   const [history, setHistory] = useState<{address: string, token: string}[]>([])
+  const [lockedAddresses, setLockedAddresses] = useState<Set<string>>(new Set())
   const [showNewModal, setShowNewModal] = useState(false)
   const [pendingDomain, setPendingDomain] = useState<string | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null)
@@ -49,6 +50,8 @@ export function TempMailPage() {
     if (!domain) return
     const savedHistory = JSON.parse(localStorage.getItem('inbox_history') || '[]')
     setHistory(savedHistory)
+    const savedLocked: string[] = JSON.parse(localStorage.getItem('inbox_locked') || '[]')
+    setLockedAddresses(new Set(savedLocked))
     const saved = localStorage.getItem('inbox_address')
     const savedToken = localStorage.getItem('inbox_token')
     if (saved && savedToken) {
@@ -79,9 +82,12 @@ export function TempMailPage() {
   function saveToHistory(addr: string, token: string) {
     setHistory(prev => {
       const filtered = prev.filter(h => h.address !== addr)
-      const next = [{ address: addr, token }, ...filtered].slice(0, 10)
-      localStorage.setItem('inbox_history', JSON.stringify(next))
-      return next
+      const next = [{ address: addr, token }, ...filtered]
+      const locked = next.filter(h => lockedAddresses.has(h.address))
+      const unlocked = next.filter(h => !lockedAddresses.has(h.address))
+      const trimmed = [...locked, ...unlocked].slice(0, 10)
+      localStorage.setItem('inbox_history', JSON.stringify(trimmed))
+      return trimmed
     })
   }
 
@@ -100,8 +106,42 @@ export function TempMailPage() {
     prevCountRef.current = 0
   }
 
+  function toggleLock(addr: string) {
+    setLockedAddresses(prev => {
+      const next = new Set(prev)
+      if (next.has(addr)) next.delete(addr)
+      else next.add(addr)
+      localStorage.setItem('inbox_locked', JSON.stringify([...next]))
+      return next
+    })
+  }
+
+  function deleteFromHistory(addr: string) {
+    setHistory(prev => {
+      const next = prev.filter(h => h.address !== addr)
+      localStorage.setItem('inbox_history', JSON.stringify(next))
+      return next
+    })
+    setLockedAddresses(prev => {
+      const next = new Set(prev)
+      next.delete(addr)
+      localStorage.setItem('inbox_locked', JSON.stringify([...next]))
+      return next
+    })
+    if (address === addr) {
+      localStorage.removeItem('inbox_address')
+      localStorage.removeItem('inbox_token')
+      setAddress('')
+    }
+  }
+
   function handleNewInbox() {
     if (address) {
+      const lockedCount = history.filter(h => lockedAddresses.has(h.address)).length
+      if (lockedCount >= 10) {
+        addToast('All history slots are locked. Unlock an address to generate a new inbox.')
+        return
+      }
       setShowNewModal(true)
     } else {
       generateNew()
@@ -163,7 +203,7 @@ export function TempMailPage() {
         connectionState={connectionState}
       />
 
-      <InboxAddressCard address={address} history={history} onCopy={handleCopy} onSwitch={switchToAddress} copied={copied} />
+      <InboxAddressCard address={address} history={history} lockedAddresses={lockedAddresses} onCopy={handleCopy} onSwitch={switchToAddress} onToggleLock={toggleLock} onDeleteHistory={deleteFromHistory} copied={copied} />
 
       {TurnstileModal}
 
