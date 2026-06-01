@@ -1,11 +1,7 @@
-import type { Metadata } from 'next'
+'use client'
+
 import Link from 'next/link'
 import { ArrowLeft, ShieldCheck, Database, Eye, Clock, HardDrives, UserMinus, Browser } from '@phosphor-icons/react'
-
-export const metadata: Metadata = {
-  title: 'Privacy Policy',
-  description: 'How DevBox handles your data. No registration, no tracking, no logs. Emails auto-delete after 72 hours.',
-}
 
 const sections = [
   {
@@ -48,6 +44,8 @@ const sections = [
 export default function PrivacyPage() {
   return (
     <div className="min-h-screen bg-dots">
+      <title>Privacy Policy | DevBox</title>
+      <meta name="description" content="How DevBox handles your data. No registration, no tracking, no logs. Emails auto-delete after 72 hours." />
       <header className="px-4 md:px-6 py-4 flex items-center justify-between">
         <Link href="/" className="text-lg font-bold font-[family-name:var(--font-heading)] flex items-center gap-2">
           <ArrowLeft className="w-4 h-4" /> Back to Inbox

@@ -1,11 +1,7 @@
-import type { Metadata } from 'next'
+'use client'
+
 import Link from 'next/link'
 import { ArrowLeft, Question, Clock, ShieldCheck, Globe, Trash, EnvelopeSimple, LockSimple, ListBullets } from '@phosphor-icons/react'
-
-export const metadata: Metadata = {
-  title: 'FAQ',
-  description: 'Frequently asked questions about DevBox temporary email service — how it works, privacy, history management, and more.',
-}
 
 const faqs = [
   {
@@ -53,6 +49,8 @@ const faqs = [
 export default function FaqPage() {
   return (
     <div className="min-h-screen bg-dots">
+      <title>FAQ | DevBox</title>
+      <meta name="description" content="Frequently asked questions about DevBox temporary email service — how it works, privacy, history management, and more." />
       <header className="px-4 md:px-6 py-4 flex items-center justify-between">
         <Link href="/" className="text-lg font-bold font-[family-name:var(--font-heading)] flex items-center gap-2">
           <ArrowLeft className="w-4 h-4" /> Back to Inbox
