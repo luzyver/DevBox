@@ -1,13 +1,18 @@
 'use client'
 
 import Link from 'next/link'
-import { ArrowLeft, ShieldCheck, Database, Eye, Clock, HardDrives, UserMinus } from '@phosphor-icons/react'
+import { ArrowLeft, ShieldCheck, Database, Eye, Clock, HardDrives, UserMinus, Browser } from '@phosphor-icons/react'
 
 const sections = [
   {
     icon: Database,
     title: 'What We Store',
     content: 'We only store incoming emails temporarily (up to 72 hours). No user accounts, no personal data, no cookies beyond what is technically necessary.',
+  },
+  {
+    icon: Browser,
+    title: 'Local Storage',
+    content: 'Your browser stores your current inbox address, auth token, address history (up to 10), and locked address preferences. This data never leaves your browser and is used solely to restore your session on refresh.',
   },
   {
     icon: Clock,
@@ -73,7 +78,7 @@ export default function PrivacyPage() {
         </div>
 
         <p className="mt-8 text-center text-sm text-muted-foreground">
-          Last updated: May 2026. Questions? Reach out via the domains listed on this service.
+          Last updated: 1 June 2026. Questions? Reach out via the domains listed on this service.
         </p>
       </main>
     </div>

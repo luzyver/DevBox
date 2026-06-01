@@ -117,6 +117,15 @@ Setup:
 
 If the env vars are empty, Turnstile is skipped (backward compatible).
 
+## Address History
+
+Up to 10 addresses are saved in history (localStorage). Access them by clicking the current address bar — a modal picker opens.
+
+- **Lock** — lock an address to prevent it from being removed when history reaches the 10-item limit. Locked items are always kept; unlocked items at the tail are trimmed first.
+- **Delete** — removes an address from history. If the active address is deleted, it switches to the next available one. Locked addresses cannot be deleted.
+- **All locked** — if all 10 slots are locked, a toast warning is shown and generating a new inbox is blocked until one is unlocked.
+- **Domain change** — clicking the domain opens a modal picker. Changing domain with an active address shows a confirmation modal, then generates a new inbox.
+
 ## Adding a New Domain
 
 Domains are added via the `/contribute` page:

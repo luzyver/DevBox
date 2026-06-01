@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { ArrowLeft, Question, Clock, ShieldCheck, Globe, Trash, EnvelopeSimple } from '@phosphor-icons/react'
+import { ArrowLeft, Question, Clock, ShieldCheck, Globe, Trash, EnvelopeSimple, LockSimple, ListBullets } from '@phosphor-icons/react'
 
 const faqs = [
   {
@@ -23,6 +23,16 @@ const faqs = [
     icon: Trash,
     q: 'Can I delete emails manually?',
     a: 'Yes. Click the delete button on any email to remove it immediately.',
+  },
+  {
+    icon: ListBullets,
+    q: 'How does address history work?',
+    a: 'Your last 10 addresses are saved. Click the address bar to open a modal picker where you can switch between them.',
+  },
+  {
+    icon: LockSimple,
+    q: 'What does the lock button do?',
+    a: 'Locking an address prevents it from being removed when the history reaches 10 items. Locked addresses are kept; only unlocked ones at the tail get trimmed.',
   },
   {
     icon: Globe,
