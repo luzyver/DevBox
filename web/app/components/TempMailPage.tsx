@@ -91,13 +91,14 @@ export function TempMailPage() {
     })
   }
 
-  async function generateNew() {
-    if (!domain) return
+  async function generateNew(overrideDomain?: string) {
+    const d = overrideDomain || domain
+    if (!d) return
     if ('Notification' in window && Notification.permission === 'default') {
       Notification.requestPermission()
     }
     const cfToken = turnstileEnabled ? await getTurnstileToken() : undefined
-    const { address: addr, token } = await generateInbox(domain, cfToken)
+    const { address: addr, token } = await generateInbox(d, cfToken)
     localStorage.setItem('inbox_address', addr)
     localStorage.setItem('inbox_token', token)
     saveToHistory(addr, token)
@@ -284,11 +285,14 @@ export function TempMailPage() {
           setShowNewModal(false)
           if (pendingDomain) {
             setDomain(pendingDomain)
+            const d = pendingDomain
             setPendingDomain(null)
             localStorage.removeItem('inbox_address')
             localStorage.removeItem('inbox_token')
+            generateNew(d)
+          } else {
+            generateNew()
           }
-          generateNew()
         }}
         onCancel={() => { setShowNewModal(false); setPendingDomain(null) }}
       />
