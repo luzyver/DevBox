@@ -9,6 +9,7 @@ export default function DomainsPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    document.title = 'Active Domains | DevBox'
     fetch('/api/domains')
       .then(r => r.json())
       .then(d => setDomains((d.domains as string).split(',').filter(Boolean).sort()))
@@ -18,6 +19,8 @@ export default function DomainsPage() {
 
   return (
     <div className="min-h-screen bg-dots">
+      <title>Active Domains | DevBox</title>
+      <meta name="description" content="List of all active domains available for temporary email addresses on DevBox." />
       <header className="px-4 md:px-6 py-4 flex items-center justify-between">
         <Link href="/" className="text-lg font-bold font-[family-name:var(--font-heading)] flex items-center gap-2">
           <ArrowLeft className="w-4 h-4" /> Back to Inbox

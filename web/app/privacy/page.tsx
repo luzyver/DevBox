@@ -1,7 +1,11 @@
-'use client'
-
+import type { Metadata } from 'next'
 import Link from 'next/link'
 import { ArrowLeft, ShieldCheck, Database, Eye, Clock, HardDrives, UserMinus, Browser } from '@phosphor-icons/react'
+
+export const metadata: Metadata = {
+  title: 'Privacy Policy',
+  description: 'How DevBox handles your data. No registration, no tracking, no logs. Emails auto-delete after 72 hours.',
+}
 
 const sections = [
   {

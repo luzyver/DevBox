@@ -19,6 +19,7 @@ export default function ContributePage() {
   const [serverIP, setServerIP] = useState('')
 
   useEffect(() => {
+    document.title = 'Contribute a Domain | DevBox'
     fetch('/api/server-info').then(r => r.json()).then(d => setServerIP(d.ip)).catch(() => {})
   }, [])
 
@@ -51,6 +52,8 @@ export default function ContributePage() {
 
   return (
     <div className="min-h-screen bg-dots">
+      <title>Contribute a Domain | DevBox</title>
+      <meta name="description" content="Add your own domain to DevBox temporary email service. Set up an MX record and submit for automatic DNS verification." />
       <div className="hidden md:block fixed top-10 right-10 w-20 h-20 bg-quaternary rounded-full opacity-40 -z-10" />
       <div className="hidden md:block fixed bottom-20 left-10 w-16 h-16 bg-secondary rotate-45 opacity-30 -z-10" />
 

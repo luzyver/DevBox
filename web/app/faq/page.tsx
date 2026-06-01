@@ -1,7 +1,11 @@
-'use client'
-
+import type { Metadata } from 'next'
 import Link from 'next/link'
 import { ArrowLeft, Question, Clock, ShieldCheck, Globe, Trash, EnvelopeSimple, LockSimple, ListBullets } from '@phosphor-icons/react'
+
+export const metadata: Metadata = {
+  title: 'FAQ',
+  description: 'Frequently asked questions about DevBox temporary email service — how it works, privacy, history management, and more.',
+}
 
 const faqs = [
   {

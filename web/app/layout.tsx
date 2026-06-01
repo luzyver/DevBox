@@ -2,9 +2,13 @@ import type { Metadata } from 'next'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'DevBox - Disposable Email',
-  description: 'Free temporary email service with multi-domain support',
+  title: {
+    default: 'DevBox - Disposable Temporary Email',
+    template: '%s | DevBox',
+  },
+  description: 'Free disposable temporary email service with multi-domain support. No registration required. Emails auto-delete after 72 hours.',
   icons: { icon: '/icon.png' },
+  robots: { index: true, follow: true },
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
