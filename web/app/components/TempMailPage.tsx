@@ -117,11 +117,9 @@ export function TempMailPage() {
   }
 
   function deleteFromHistory(addr: string) {
-    setHistory(prev => {
-      const next = prev.filter(h => h.address !== addr)
-      localStorage.setItem('inbox_history', JSON.stringify(next))
-      return next
-    })
+    const nextHistory = history.filter(h => h.address !== addr)
+    localStorage.setItem('inbox_history', JSON.stringify(nextHistory))
+    setHistory(nextHistory)
     setLockedAddresses(prev => {
       const next = new Set(prev)
       next.delete(addr)
@@ -129,9 +127,12 @@ export function TempMailPage() {
       return next
     })
     if (address === addr) {
-      localStorage.removeItem('inbox_address')
-      localStorage.removeItem('inbox_token')
-      setAddress('')
+      const next = nextHistory[0]
+      if (next) {
+        switchToAddress(next)
+      } else {
+        generateNew()
+      }
     }
   }
 

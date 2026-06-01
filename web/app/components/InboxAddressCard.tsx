@@ -47,29 +47,35 @@ export function InboxAddressCard({ address, history, lockedAddresses, onCopy, on
         items={history}
         keyOf={h => h.address}
         labelOf={h => h.address}
+        isLocked={h => lockedAddresses.has(h.address)}
         onSelect={entry => {
           setShowPicker(false)
           if (entry.address !== address) onSwitch(entry)
         }}
         onCancel={() => setShowPicker(false)}
-        renderActions={entry => (
-          <>
-            <button
-              onClick={e => { e.stopPropagation(); onToggleLock(entry.address) }}
-              className="p-1 rounded hover:bg-border text-muted-foreground hover:text-foreground transition-colors"
-              title={lockedAddresses.has(entry.address) ? 'Unlock' : 'Lock'}
-            >
-              {lockedAddresses.has(entry.address) ? <LockOpen size={14} /> : <Lock size={14} />}
-            </button>
-            <button
-              onClick={e => { e.stopPropagation(); onDeleteHistory(entry.address) }}
-              className="p-1 rounded hover:bg-border text-muted-foreground hover:text-red-500 transition-colors"
-              title="Delete"
-            >
-              <Trash size={14} />
-            </button>
-          </>
-        )}
+        renderActions={entry => {
+          const locked = lockedAddresses.has(entry.address)
+          return (
+            <>
+              <button
+                onClick={e => { e.stopPropagation(); onToggleLock(entry.address) }}
+                className="p-1 rounded hover:bg-border text-muted-foreground hover:text-foreground transition-colors"
+                title={locked ? 'Unlock' : 'Lock'}
+              >
+                {locked ? <LockOpen size={14} /> : <Lock size={14} />}
+              </button>
+              {!locked && (
+                <button
+                  onClick={e => { e.stopPropagation(); onDeleteHistory(entry.address) }}
+                  className="p-1 rounded hover:bg-border text-muted-foreground hover:text-red-500 transition-colors"
+                  title="Delete"
+                >
+                  <Trash size={14} />
+                </button>
+              )}
+            </>
+          )
+        }}
       />
     </>
   )
