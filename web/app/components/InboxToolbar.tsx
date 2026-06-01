@@ -21,8 +21,10 @@ export function InboxToolbar({ domains, domain, onDomainChange, onNewInbox }: Pr
       <header className="border-b-2 border-foreground bg-card">
         <div className="px-4 md:px-6 py-3 md:py-4 flex items-center justify-between gap-2">
           <h1 className="text-xl md:text-2xl font-extrabold font-[family-name:var(--font-heading)] flex items-center gap-2 shrink-0">
-            <img src="/icon.png" alt="DevBox" className="w-8 h-8 md:w-12 md:h-12" />
-            <span>DevBox</span>
+            <img src="/icon.png" alt="DevBox" className="w-8 h-8 md:w-10 md:h-10" />
+            <span className="text-3xl md:text-[2.5rem] leading-none">
+              Dev<span className="text-accent">Box</span>
+            </span>
           </h1>
           <div className="flex items-center gap-1.5 md:gap-3 min-w-0">
             <button
