@@ -50,10 +50,16 @@ export function TempMailPage() {
     setHistory(savedHistory)
     const saved = localStorage.getItem('inbox_address')
     const savedToken = localStorage.getItem('inbox_token')
-    if (saved && savedToken && saved.endsWith(`@${domain}`)) {
-      setToken(savedToken)
-      setAddress(saved)
-    } else if (!address) {
+    if (saved && savedToken) {
+      const matchedDomain = domains.find(d => saved.endsWith(`@${d}`))
+      if (matchedDomain) {
+        setToken(savedToken)
+        setAddress(saved)
+        setDomain(matchedDomain)
+        return
+      }
+    }
+    if (!address) {
       generateNew()
     }
   }, [domain])
