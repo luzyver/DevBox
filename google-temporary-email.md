@@ -11,6 +11,8 @@ Generated alias: devbox+onljnk12@gmail.com
 
 All messages still arrive in the parent Gmail inbox. DevBox polls Gmail over IMAP, finds messages sent to plus-address aliases, then stores them in Redis so they can be read from `/temporary-google-email`.
 
+The page uses the same inbox UI as the main temporary email page, but it keeps only one active Gmail alias at a time.
+
 ## Requirements
 
 - A dedicated Gmail account, for example `devbox@gmail.com`
@@ -49,13 +51,13 @@ Use it without spaces in `.env`:
 abcdefghijklmnop
 ```
 
-## 3. Enable IMAP in Gmail
+## 3. Check IMAP in Gmail
 
 1. Open Gmail.
 2. Click Settings -> See all settings.
 3. Open Forwarding and POP/IMAP.
-4. Set IMAP access to Enable IMAP.
-5. Save changes.
+
+For personal Gmail accounts, Google no longer shows an Enable IMAP / Disable IMAP switch in many accounts because IMAP is enabled by default. If the switch is visible, enable IMAP and save changes. If it is not visible, continue with the setup.
 
 ## 4. Configure DevBox
 
@@ -74,7 +76,7 @@ Variable meanings:
 
 | Variable | Description |
 |----------|-------------|
-| `NEXT_PUBLIC_GOOGLE_BASE_EMAIL` | Parent email shown by the frontend at build time |
+| `NEXT_PUBLIC_GOOGLE_BASE_EMAIL` | Parent email used by the frontend to generate aliases at build time; it is not displayed in the UI |
 | `GOOGLE_BASE_EMAIL` | Parent Gmail address allowed by the backend |
 | `GOOGLE_IMAP_USER` | Gmail account used for IMAP login |
 | `GOOGLE_IMAP_APP_PASSWORD` | Gmail app password, not the normal account password |
@@ -98,10 +100,10 @@ For local development, restart both backend and frontend processes.
 ## 6. Test the Flow
 
 1. Open `/temporary-google-email`.
-2. Generate an alias, for example `devbox+onljnk12@gmail.com`.
+2. On the first visit, complete Turnstile. DevBox generates one active alias, for example `devbox+onljnk12@gmail.com`.
 3. Send a test email to that alias from another email account.
 4. Wait up to `GOOGLE_IMAP_POLL_INTERVAL`.
-5. Click Refresh in the Alias Inbox panel if the message has not appeared yet.
+5. Click Refresh if the message has not appeared yet.
 
 ## How It Works
 
@@ -109,7 +111,7 @@ DevBox logs in to Gmail using IMAP and searches unread messages sent to the pare
 
 When it finds a message addressed to a plus alias such as `devbox+onljnk12@gmail.com`, it stores the message in Redis under that exact alias address. The frontend claims a signed token for the alias through `/api/google-alias/claim`, then reads it through the normal inbox API.
 
-If `TURNSTILE_SECRET` is set, `/api/google-alias/claim` requires a valid Turnstile token. The frontend gets this token using `NEXT_PUBLIC_TURNSTILE_SITE_KEY` when generating a new alias. An already claimed alias is restored from the `google_alias` localStorage key without another Turnstile challenge.
+If `TURNSTILE_SECRET` is set, `/api/google-alias/claim` requires a valid Turnstile token. The frontend gets this token using `NEXT_PUBLIC_TURNSTILE_SITE_KEY` when generating a new alias. On first visit, the page runs Turnstile and creates the first alias automatically. Later visits restore the claimed alias from the `google_alias` localStorage key without another Turnstile challenge. Clicking `New` runs Turnstile again and replaces the active alias.
 
 After DevBox imports a Gmail message, it marks the Gmail message as seen to avoid importing it repeatedly.
 

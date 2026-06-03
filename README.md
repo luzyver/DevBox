@@ -101,6 +101,12 @@ docker compose up -d --build
 | `INBOX_TTL` | Inbox expiry duration (e.g. `72h`) |
 | `TURNSTILE_SECRET` | Cloudflare Turnstile secret key (backend) |
 | `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | Cloudflare Turnstile site key (frontend, build-time) |
+| `NEXT_PUBLIC_GOOGLE_BASE_EMAIL` | Gmail parent address used by the frontend to generate plus aliases (build-time, not shown in UI) |
+| `GOOGLE_BASE_EMAIL` | Gmail parent address accepted by the backend for alias claims |
+| `GOOGLE_IMAP_USER` | Gmail account used by the backend IMAP poller |
+| `GOOGLE_IMAP_APP_PASSWORD` | Gmail app password for IMAP login |
+| `GOOGLE_IMAP_HOST` | IMAP host, e.g. `imap.gmail.com:993` |
+| `GOOGLE_IMAP_POLL_INTERVAL` | Gmail poll interval, e.g. `30s` |
 
 ## Anti-Spam (Cloudflare Turnstile)
 
@@ -121,7 +127,9 @@ If the env vars are empty, Turnstile is skipped (backward compatible).
 
 DevBox can generate Gmail plus-address aliases like `devbox+onljnk12@gmail.com` from one parent Gmail inbox and import matching messages through IMAP.
 
-Setup guide: [docs/google-temporary-email.md](docs/google-temporary-email.md)
+The `/temporary-google-email` page uses the same inbox UI as the main page, but keeps only one active Gmail alias. On the first visit it runs Turnstile and generates an alias; later visits restore the saved alias from the `google_alias` localStorage key without another challenge. Clicking `New` runs Turnstile again and replaces the active alias.
+
+Setup guide: [google-temporary-email.md](google-temporary-email.md)
 
 ## Address History
 
@@ -149,6 +157,7 @@ Pending domains that remain unverified for 24 hours are automatically removed. A
 | Path | Description |
 |------|-------------|
 | `/` | Main inbox |
+| `/temporary-google-email` | Gmail plus-address alias inbox |
 | `/contribute` | Add your domain |
 | `/domains` | List of active domains |
 | `/faq` | Frequently asked questions |
