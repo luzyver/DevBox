@@ -132,10 +132,14 @@ func Start(cfg *config.Config, s *store.Store) {
 
 	api.Post("/google-alias/claim", func(c *fiber.Ctx) error {
 		var body struct {
-			Address string `json:"address"`
+			Address        string `json:"address"`
+			TurnstileToken string `json:"turnstile_token"`
 		}
 		if err := c.BodyParser(&body); err != nil || body.Address == "" {
 			return c.Status(400).JSON(fiber.Map{"error": "address required"})
+		}
+		if cfg.TurnstileSecret != "" && !verifyTurnstile(body.TurnstileToken, cfg.TurnstileSecret) {
+			return c.Status(403).JSON(fiber.Map{"error": "turnstile verification failed"})
 		}
 		if cfg.GoogleBaseEmail == "" {
 			return c.Status(404).JSON(fiber.Map{"error": "google alias is not configured"})

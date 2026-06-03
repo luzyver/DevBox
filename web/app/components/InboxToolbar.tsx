@@ -11,9 +11,12 @@ interface Props {
   onDomainChange: (d: string) => void
   onNewInbox: () => void
   connectionState: ConnectionState
+  domainPickerDisabled?: boolean
+  newLabel?: string
+  showDomain?: boolean
 }
 
-export function InboxToolbar({ domains, domain, onDomainChange, onNewInbox }: Props) {
+export function InboxToolbar({ domains, domain, onDomainChange, onNewInbox, domainPickerDisabled = false, newLabel = 'New', showDomain = true }: Props) {
   const [showPicker, setShowPicker] = useState(false)
 
   return (
@@ -27,21 +30,26 @@ export function InboxToolbar({ domains, domain, onDomainChange, onNewInbox }: Pr
             </span>
           </h1>
           <div className="flex items-center gap-1.5 md:gap-3 min-w-0">
-            <button
-              onClick={() => setShowPicker(true)}
-              className="input-geo min-w-0 !py-1.5 !px-2 md:!py-2 md:!px-3 text-xs md:text-sm font-medium truncate cursor-pointer"
-            >
-              @{domain}
-            </button>
+            {showDomain && (
+              <button
+                onClick={() => {
+                  if (!domainPickerDisabled) setShowPicker(true)
+                }}
+                disabled={domainPickerDisabled}
+                className="input-geo min-w-0 !py-1.5 !px-2 md:!py-2 md:!px-3 text-xs md:text-sm font-medium truncate cursor-pointer disabled:cursor-default disabled:opacity-80"
+              >
+                @{domain}
+              </button>
+            )}
             <button onClick={onNewInbox} disabled={domains.length === 0} className="btn-secondary !py-1.5 !px-2 md:!py-2 md:!px-4 text-xs md:text-sm shrink-0 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1">
-              <ArrowsClockwise className="w-3.5 h-3.5" weight="bold" /> New
+              <ArrowsClockwise className="w-3.5 h-3.5" weight="bold" /> {newLabel}
             </button>
           </div>
         </div>
       </header>
 
       <PickerModal
-        open={showPicker}
+        open={showPicker && !domainPickerDisabled}
         title="Select Domain"
         items={domains}
         keyOf={d => d}

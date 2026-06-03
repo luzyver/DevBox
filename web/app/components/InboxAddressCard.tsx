@@ -13,9 +13,11 @@ interface Props {
   onToggleLock: (addr: string) => void
   onDeleteHistory: (addr: string) => void
   copied: boolean
+  pickerDisabled?: boolean
+  label?: string
 }
 
-export function InboxAddressCard({ address, history, lockedAddresses, onCopy, onSwitch, onToggleLock, onDeleteHistory, copied }: Props) {
+export function InboxAddressCard({ address, history, lockedAddresses, onCopy, onSwitch, onToggleLock, onDeleteHistory, copied, pickerDisabled = false, label = 'Your inbox:' }: Props) {
   const [showPicker, setShowPicker] = useState(false)
 
   if (!address) return null
@@ -25,12 +27,15 @@ export function InboxAddressCard({ address, history, lockedAddresses, onCopy, on
       <div className="border-b-2 border-foreground bg-muted">
         <div className="px-4 md:px-6 py-2 md:py-3 flex items-center gap-2 md:gap-3">
           <span className="hidden md:inline text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-            Your inbox:
+            {label}
           </span>
           <div className="flex-1 flex items-center gap-2 min-w-0">
             <button
-              onClick={() => setShowPicker(true)}
-              className="min-w-0 flex-1 bg-card border-2 border-foreground rounded-lg px-3 md:px-4 py-2 font-mono text-sm md:text-lg shadow-[2px_2px_0px_0px_#1E293B] md:shadow-pop truncate cursor-pointer text-left"
+              onClick={() => {
+                if (!pickerDisabled) setShowPicker(true)
+              }}
+              disabled={pickerDisabled}
+              className="min-w-0 flex-1 bg-card border-2 border-foreground rounded-lg px-3 md:px-4 py-2 font-mono text-sm md:text-lg shadow-[2px_2px_0px_0px_#1E293B] md:shadow-pop truncate cursor-pointer text-left disabled:cursor-default"
             >
               {address}
             </button>
@@ -42,7 +47,7 @@ export function InboxAddressCard({ address, history, lockedAddresses, onCopy, on
       </div>
 
       <PickerModal
-        open={showPicker}
+        open={showPicker && !pickerDisabled}
         title="Select Address"
         items={history}
         keyOf={h => h.address}

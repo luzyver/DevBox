@@ -17,6 +17,7 @@ All messages still arrive in the parent Gmail inbox. DevBox polls Gmail over IMA
 - 2-Step Verification enabled on that Google account
 - A Gmail app password
 - IMAP enabled in Gmail
+- Cloudflare Turnstile env configured if bot protection is enabled
 
 Do not use a personal Gmail account for this. Use a disposable operational mailbox dedicated to DevBox.
 
@@ -82,6 +83,8 @@ Variable meanings:
 
 `NEXT_PUBLIC_GOOGLE_BASE_EMAIL` is used by Next.js, so rebuild the web container after changing it.
 
+With Docker Compose, this value must be present in the root `.env` before building because it is passed as a `devbox-web` build argument.
+
 ## 5. Restart or Rebuild
 
 For Docker Compose:
@@ -105,6 +108,8 @@ For local development, restart both backend and frontend processes.
 DevBox logs in to Gmail using IMAP and searches unread messages sent to the parent local part, for example `devbox`.
 
 When it finds a message addressed to a plus alias such as `devbox+onljnk12@gmail.com`, it stores the message in Redis under that exact alias address. The frontend claims a signed token for the alias through `/api/google-alias/claim`, then reads it through the normal inbox API.
+
+If `TURNSTILE_SECRET` is set, `/api/google-alias/claim` requires a valid Turnstile token. The frontend gets this token using `NEXT_PUBLIC_TURNSTILE_SITE_KEY` before opening an alias inbox.
 
 After DevBox imports a Gmail message, it marks the Gmail message as seen to avoid importing it repeatedly.
 
