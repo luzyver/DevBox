@@ -55,7 +55,8 @@ export function GoogleAliasPage() {
   const { messages, loading, error, connectionState, refresh, removeMessage, newMessageIds } = useRealtimeInbox(alias)
 
   useEffect(() => {
-    restoreAlias()
+    if (restoreAlias()) return
+    if (CONFIGURED_BASE_EMAIL) generateAlias()
   }, [])
 
   useEffect(() => {
@@ -98,8 +99,10 @@ export function GoogleAliasPage() {
       if (saved?.address && saved?.token && isAliasForConfiguredBase(saved.address)) {
         setToken(saved.token)
         setAlias(saved.address)
+        return true
       }
     } catch { /* ignore invalid storage */ }
+    return false
   }
 
   async function handleCopy() {
