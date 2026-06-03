@@ -30,6 +30,18 @@ export async function claimInbox(address: string, turnstileToken?: string): Prom
   return data.token
 }
 
+export async function claimGoogleAlias(address: string): Promise<string> {
+  const res = await fetch('/api/google-alias/claim', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ address }),
+  })
+  if (!res.ok) throw new Error('Failed to claim google alias')
+  const data = await res.json()
+  currentToken = data.token
+  return data.token
+}
+
 export function getToken(): string | null {
   return currentToken
 }

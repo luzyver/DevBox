@@ -268,7 +268,8 @@ export function TempMailPage() {
 
       <footer className="shrink-0 border-t-2 border-border py-3 px-4 md:px-6 flex flex-col md:flex-row items-center justify-between gap-2 text-sm text-muted-foreground">
         <p>© {new Date().getFullYear()} DevBox. Disposable email service.</p>
-        <nav className="flex items-center gap-4">
+        <nav className="flex items-center justify-center flex-wrap gap-x-4 gap-y-1">
+          <a href="/temporary-google-email" className="hover:text-accent font-medium">Google Email</a>
           <a href="/domains" className="hover:text-accent font-medium">Domains</a>
           <a href="/faq" className="hover:text-accent font-medium">FAQ</a>
           <a href="/privacy" className="hover:text-accent font-medium">Privacy</a>

@@ -1,6 +1,7 @@
 package config
 
 import (
+	"log"
 	"os"
 	"time"
 
@@ -15,13 +16,22 @@ type Config struct {
 	HMACSecret      string
 	ServerIP        string // public IP for DNS verification
 	TurnstileSecret string
+	GoogleBaseEmail string
+	GoogleIMAPUser  string
+	GoogleIMAPPass  string
+	GoogleIMAPHost  string
+	GooglePollEvery time.Duration
 }
 
 func Load() *Config {
 	godotenv.Load()
 	ttl, err := time.ParseDuration(os.Getenv("INBOX_TTL"))
 	if err != nil {
-		ttl = 1 * time.Hour
+		log.Fatal("INBOX_TTL must be set to a valid duration")
+	}
+	googlePollEvery, err := time.ParseDuration(os.Getenv("GOOGLE_IMAP_POLL_INTERVAL"))
+	if os.Getenv("GOOGLE_IMAP_POLL_INTERVAL") == "" || err != nil {
+		googlePollEvery = 0
 	}
 	return &Config{
 		SMTPPort:        os.Getenv("SMTP_PORT"),
@@ -31,5 +41,10 @@ func Load() *Config {
 		HMACSecret:      os.Getenv("HMAC_SECRET"),
 		ServerIP:        os.Getenv("SERVER_IP"),
 		TurnstileSecret: os.Getenv("TURNSTILE_SECRET"),
+		GoogleBaseEmail: os.Getenv("GOOGLE_BASE_EMAIL"),
+		GoogleIMAPUser:  os.Getenv("GOOGLE_IMAP_USER"),
+		GoogleIMAPPass:  os.Getenv("GOOGLE_IMAP_APP_PASSWORD"),
+		GoogleIMAPHost:  os.Getenv("GOOGLE_IMAP_HOST"),
+		GooglePollEvery: googlePollEvery,
 	}
 }

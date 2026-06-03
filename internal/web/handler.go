@@ -130,6 +130,28 @@ func Start(cfg *config.Config, s *store.Store) {
 		return c.JSON(fiber.Map{"token": token})
 	})
 
+	api.Post("/google-alias/claim", func(c *fiber.Ctx) error {
+		var body struct {
+			Address string `json:"address"`
+		}
+		if err := c.BodyParser(&body); err != nil || body.Address == "" {
+			return c.Status(400).JSON(fiber.Map{"error": "address required"})
+		}
+		if cfg.GoogleBaseEmail == "" {
+			return c.Status(404).JSON(fiber.Map{"error": "google alias is not configured"})
+		}
+
+		address := strings.ToLower(strings.TrimSpace(body.Address))
+		baseLocal, baseDomain, ok := strings.Cut(strings.ToLower(cfg.GoogleBaseEmail), "@")
+		local, domain, addressOK := strings.Cut(address, "@")
+		if !ok || !addressOK || domain != baseDomain || !strings.HasPrefix(local, baseLocal+"+") {
+			return c.Status(403).JSON(fiber.Map{"error": "invalid google alias"})
+		}
+
+		token := signAddress(address, cfg.HMACSecret)
+		return c.JSON(fiber.Map{"token": token})
+	})
+
 	api.Get("/inbox/:address", func(c *fiber.Ctx) error {
 		address := c.Params("address")
 		if !verifyToken(c, address, cfg.HMACSecret) {

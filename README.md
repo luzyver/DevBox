@@ -117,6 +117,12 @@ Setup:
 
 If the env vars are empty, Turnstile is skipped (backward compatible).
 
+## Google Temporary Email
+
+DevBox can generate Gmail plus-address aliases like `devbox+onljnk12@gmail.com` from one parent Gmail inbox and import matching messages through IMAP.
+
+Setup guide: [docs/google-temporary-email.md](docs/google-temporary-email.md)
+
 ## Address History
 
 Up to 10 addresses are saved in history (localStorage). Access them by clicking the current address bar — a modal picker opens.
