@@ -109,7 +109,7 @@ DevBox logs in to Gmail using IMAP and searches unread messages sent to the pare
 
 When it finds a message addressed to a plus alias such as `devbox+onljnk12@gmail.com`, it stores the message in Redis under that exact alias address. The frontend claims a signed token for the alias through `/api/google-alias/claim`, then reads it through the normal inbox API.
 
-If `TURNSTILE_SECRET` is set, `/api/google-alias/claim` requires a valid Turnstile token. The frontend gets this token using `NEXT_PUBLIC_TURNSTILE_SITE_KEY` before opening an alias inbox.
+If `TURNSTILE_SECRET` is set, `/api/google-alias/claim` requires a valid Turnstile token. The frontend gets this token using `NEXT_PUBLIC_TURNSTILE_SITE_KEY` when generating a new alias. An already claimed alias is restored from the `google_alias` localStorage key without another Turnstile challenge.
 
 After DevBox imports a Gmail message, it marks the Gmail message as seen to avoid importing it repeatedly.
 

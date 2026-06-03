@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { EnvelopeSimple } from '@phosphor-icons/react'
-import { claimGoogleAlias, deleteEmail } from '../components/api'
+import { claimGoogleAlias, deleteEmail, setToken } from '../components/api'
 import { EmptyInboxState } from '../components/EmptyInboxState'
 import { ErrorState } from '../components/ErrorState'
 import { InboxAddressCard } from '../components/InboxAddressCard'
@@ -17,6 +17,7 @@ import { MessageSummary } from '../components/types'
 import { useRealtimeInbox } from '../components/use-realtime-inbox'
 
 const CONFIGURED_BASE_EMAIL = process.env.NEXT_PUBLIC_GOOGLE_BASE_EMAIL?.trim().toLowerCase() || ''
+const STORAGE_KEY = 'google_alias'
 const ALPHABET = 'abcdefghijklmnopqrstuvwxyz0123456789'
 
 function splitEmail(address: string) {
@@ -36,6 +37,12 @@ function makeAlias(baseEmail: string) {
   return `${local}+${randomTag()}@${domain}`
 }
 
+function isAliasForConfiguredBase(address: string) {
+  const { local: baseLocal, domain: baseDomain } = splitEmail(CONFIGURED_BASE_EMAIL)
+  const { local, domain } = splitEmail(address.trim().toLowerCase())
+  return Boolean(baseLocal && baseDomain && domain === baseDomain && local.startsWith(`${baseLocal}+`))
+}
+
 export function GoogleAliasPage() {
   const [alias, setAlias] = useState('')
   const [selected, setSelected] = useState<MessageSummary | null>(null)
@@ -48,7 +55,7 @@ export function GoogleAliasPage() {
   const { messages, loading, error, connectionState, refresh, removeMessage, newMessageIds } = useRealtimeInbox(alias)
 
   useEffect(() => {
-    if (CONFIGURED_BASE_EMAIL) generateAlias()
+    restoreAlias()
   }, [])
 
   useEffect(() => {
@@ -72,7 +79,8 @@ export function GoogleAliasPage() {
     setClaiming(true)
     try {
       const cfToken = turnstileEnabled ? await getTurnstileToken() : undefined
-      await claimGoogleAlias(nextAlias, cfToken)
+      const token = await claimGoogleAlias(nextAlias, cfToken)
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ address: nextAlias, token }))
       setAlias(nextAlias)
       setSelected(null)
       setCopied(false)
@@ -82,6 +90,16 @@ export function GoogleAliasPage() {
     } finally {
       setClaiming(false)
     }
+  }
+
+  function restoreAlias() {
+    try {
+      const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null') as { address?: string, token?: string } | null
+      if (saved?.address && saved?.token && isAliasForConfiguredBase(saved.address)) {
+        setToken(saved.token)
+        setAlias(saved.address)
+      }
+    } catch { /* ignore invalid storage */ }
   }
 
   async function handleCopy() {
