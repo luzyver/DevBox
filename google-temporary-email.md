@@ -61,10 +61,15 @@ For personal Gmail accounts, Google no longer shows an Enable IMAP / Disable IMA
 
 ## 4. Configure DevBox
 
-Add these values to `.env`:
+Set this value in the Cloudflare Pages build settings:
 
 ```env
 NEXT_PUBLIC_GOOGLE_BASE_EMAIL=devbox@gmail.com
+```
+
+Add the backend values to the VM `.env`:
+
+```env
 GOOGLE_BASE_EMAIL=devbox@gmail.com
 GOOGLE_IMAP_USER=devbox@gmail.com
 GOOGLE_IMAP_APP_PASSWORD=abcdefghijklmnop
@@ -83,13 +88,11 @@ Variable meanings:
 | `GOOGLE_IMAP_HOST` | Gmail IMAP host, usually `imap.gmail.com:993` |
 | `GOOGLE_IMAP_POLL_INTERVAL` | How often DevBox checks Gmail for unread alias messages |
 
-`NEXT_PUBLIC_GOOGLE_BASE_EMAIL` is used by Next.js, so rebuild the web container after changing it.
-
-With Docker Compose, this value must be present in the root `.env` before building because it is passed as a `devbox-web` build argument.
+`NEXT_PUBLIC_GOOGLE_BASE_EMAIL` is embedded in the Pages frontend at build time, so redeploy Pages after changing it.
 
 ## 5. Restart or Rebuild
 
-For Docker Compose:
+For the backend on the VM:
 
 ```bash
 docker compose up -d --build

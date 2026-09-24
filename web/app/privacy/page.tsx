@@ -32,7 +32,7 @@ const sections = [
   {
     icon: HardDrives,
     title: 'Infrastructure',
-    content: 'Emails are stored in-memory (Redis) with automatic TTL expiry. The service runs on infrastructure we control. Web traffic is proxied through Cloudflare.',
+    content: 'Emails are stored in-memory (Redis) with automatic TTL expiry. The service runs on infrastructure we control. The frontend is hosted on Cloudflare Pages; API and live inbox traffic pass through Nginx on our VM.',
   },
   {
     icon: ShieldCheck,

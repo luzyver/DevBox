@@ -1,13 +1,14 @@
 import { MessageSummary } from './types'
 
 let currentToken: string | null = null
+export const apiUrl = (path: string) => `${process.env.NEXT_PUBLIC_API_URL || 'https://api.d-box.tech'}${path}`
 
 export function setToken(token: string) {
   currentToken = token
 }
 
 export async function generateInbox(domain: string, turnstileToken?: string): Promise<{ address: string; token: string }> {
-  const res = await fetch('/api/inbox/generate', {
+  const res = await fetch(apiUrl('/api/inbox/generate'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ domain, turnstile_token: turnstileToken }),
@@ -19,7 +20,7 @@ export async function generateInbox(domain: string, turnstileToken?: string): Pr
 }
 
 export async function claimInbox(address: string, turnstileToken?: string): Promise<string> {
-  const res = await fetch('/api/inbox/claim', {
+  const res = await fetch(apiUrl('/api/inbox/claim'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ address, turnstile_token: turnstileToken }),
@@ -31,7 +32,7 @@ export async function claimInbox(address: string, turnstileToken?: string): Prom
 }
 
 export async function claimGoogleAlias(address: string, turnstileToken?: string): Promise<string> {
-  const res = await fetch('/api/google-alias/claim', {
+  const res = await fetch(apiUrl('/api/google-alias/claim'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ address, turnstile_token: turnstileToken }),
@@ -47,7 +48,7 @@ export function getToken(): string | null {
 }
 
 export async function fetchInbox(address: string, signal?: AbortSignal): Promise<MessageSummary[]> {
-  const res = await fetch(`/api/inbox/${address}`, {
+  const res = await fetch(apiUrl(`/api/inbox/${address}`), {
     signal,
     headers: { Authorization: `Bearer ${currentToken}` },
   })
@@ -57,14 +58,14 @@ export async function fetchInbox(address: string, signal?: AbortSignal): Promise
 }
 
 export async function fetchDomains(signal?: AbortSignal): Promise<string[]> {
-  const res = await fetch('/api/domains', { signal })
+  const res = await fetch(apiUrl('/api/domains'), { signal })
   if (!res.ok) throw new Error('Failed to fetch domains')
   const data = await res.json()
   return (data.domains as string).split(',').map(d => d.trim()).filter(Boolean)
 }
 
 export async function deleteEmail(address: string, id: string): Promise<void> {
-  const res = await fetch(`/api/inbox/${address}/${id}`, {
+  const res = await fetch(apiUrl(`/api/inbox/${address}/${id}`), {
     method: 'DELETE',
     headers: { Authorization: `Bearer ${currentToken}` },
   })

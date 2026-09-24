@@ -89,7 +89,7 @@ export function useRealtimeInbox(address: string) {
         // Connect SSE
         const token = getToken()
         if (!token) return
-        const sseBase = process.env.NEXT_PUBLIC_SSE_URL || ''
+        const sseBase = process.env.NEXT_PUBLIC_SSE_URL || 'https://sse.d-box.tech'
         const es = new EventSource(`${sseBase}/api/inbox/${address}/stream?token=${token}`)
         esRef.current = es
 

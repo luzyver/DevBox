@@ -44,7 +44,10 @@ func verifyTurnstile(token, secret string) bool {
 
 func Start(cfg *config.Config, s *store.Store) {
 	app := fiber.New()
-	app.Use(cors.New())
+	app.Use(cors.New(cors.Config{
+		AllowOrigins: "https://d-box.tech,http://localhost:3000,http://127.0.0.1:3000",
+		AllowHeaders: "Origin, Content-Type, Accept, Authorization",
+	}))
 
 	api := app.Group("/api")
 

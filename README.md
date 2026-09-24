@@ -8,18 +8,20 @@ Disposable temporary email service with multi-domain support and community domai
 - **Frontend:** Next.js + Tailwind CSS
 - **Database:** Redis (inbox with TTL auto-expire + domain management)
 - **Icons:** Phosphor Icons (duotone)
-- **Infra:** Docker Compose, Cloudflare Tunnel
+- **Infra:** Cloudflare Pages, Docker Compose, Nginx on VM
 
 ## Architecture
 
 ```
 [Internet] ─── MX record ──→ [devbox-app :25] (SMTP direct)
-[Browser]  ─── CF Tunnel ──→ [devbox-web :3000] ──rewrite──→ [devbox-app :8080]
+[Browser] ──HTTPS──→ [Cloudflare Pages: static frontend]
+[Browser] ──HTTPS──→ [api.d-box.tech] ──→ [Nginx on VM] ──→ [devbox-app :8080]
+[SSE client] ──HTTPS──→ [sse.d-box.tech] ──→ [Nginx on VM] ──→ [devbox-app :8081]
 ```
 
 - SMTP (port 25) exposed directly to the internet via VPS public IP
-- Web accessed through Cloudflare Tunnel (network `cloudflared`)
-- Next.js proxies `/api/*` to Go backend internally
+- Cloudflare Pages serves the static frontend at `d-box.tech`
+- Nginx on the VM proxies API and SSE traffic to the Go backend
 
 ## Project Structure
 
@@ -62,32 +64,49 @@ For the primary domain:
 | MX | yourdomain.com | mail.yourdomain.com (priority 10) | — |
 | A | mail.yourdomain.com | VPS IP | DNS only |
 
-Additional domains only need an MX record pointing to `mail.yourdomain.com`.
+Also point `api.d-box.tech` and `sse.d-box.tech` to the VPS public IP as DNS-only A records. Additional mail domains only need an MX record pointing to `mail.yourdomain.com`.
 
-### 3. Cloudflare Tunnel
+### 3. Cloudflare Pages
 
-Point the public hostname to `http://devbox-web:3000` in the CF Tunnel dashboard.
+Create a Pages project from this repository with root directory `web`, build command `npm run build`, and output directory `out`. Copy the values from `web/.env.example` into the Pages project’s build environment variables; these stay separate from the VM’s root `.env`.
 
-Ensure the `cloudflared` network exists:
+Add `d-box.tech` as the Pages custom domain.
 
-```bash
-docker network create cloudflared
+### 4. Nginx on the VM
+
+Install Nginx on the VM and issue Let’s Encrypt certificates for `api.d-box.tech` and `sse.d-box.tech` at:
+
+```text
+/etc/letsencrypt/live/api.d-box.tech/fullchain.pem
+/etc/letsencrypt/live/api.d-box.tech/privkey.pem
+/etc/letsencrypt/live/sse.d-box.tech/fullchain.pem
+/etc/letsencrypt/live/sse.d-box.tech/privkey.pem
 ```
 
-### 4. Deploy
+Enable the included host configuration:
 
 ```bash
-cd web && npm install && cd ..
+sudo install -m 644 nginx/tempmail.conf /etc/nginx/sites-available/tempmail
+sudo ln -s /etc/nginx/sites-available/tempmail /etc/nginx/sites-enabled/tempmail
+sudo nginx -t && sudo systemctl reload nginx
+```
+
+Nginx listens on ports 80 and 443, redirects HTTP to HTTPS, and proxies API and SSE traffic. Ensure both ports are open on the VPS firewall.
+
+### 5. Deploy the backend
+
+```bash
 docker compose up -d --build
 ```
 
 ## Services
 
-| Container | Port | Function |
+| Component | Port | Function |
 |-----------|------|----------|
-| devbox-app | 25, 8080 | SMTP server + REST API |
-| devbox-web | 3000 | Frontend (Next.js) |
-| devbox-redis | 6379 | Inbox storage + domain management |
+| Cloudflare Pages | `d-box.tech` | Static frontend |
+| Nginx (VM) | 80, 443 | HTTPS reverse proxy for API and SSE |
+| devbox-app | 25, 127.0.0.1:8080, 127.0.0.1:8081 | SMTP, REST API, SSE |
+| devbox-redis | internal 6379 | Inbox storage + domain management |
 
 ## Environment Variables
 
@@ -100,13 +119,13 @@ docker compose up -d --build
 | `SERVER_IP` | VPS public IP (for DNS verification) |
 | `INBOX_TTL` | Inbox expiry duration (e.g. `72h`) |
 | `TURNSTILE_SECRET` | Cloudflare Turnstile secret key (backend) |
-| `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | Cloudflare Turnstile site key (frontend, build-time) |
-| `NEXT_PUBLIC_GOOGLE_BASE_EMAIL` | Gmail parent address used by the frontend to generate plus aliases (build-time, not shown in UI) |
 | `GOOGLE_BASE_EMAIL` | Gmail parent address accepted by the backend for alias claims |
 | `GOOGLE_IMAP_USER` | Gmail account used by the backend IMAP poller |
 | `GOOGLE_IMAP_APP_PASSWORD` | Gmail app password for IMAP login |
 | `GOOGLE_IMAP_HOST` | IMAP host, e.g. `imap.gmail.com:993` |
 | `GOOGLE_IMAP_POLL_INTERVAL` | Gmail poll interval, e.g. `30s` |
+
+Cloudflare Pages build variables are listed separately in `web/.env.example` and configured in the Pages project settings.
 
 ## Anti-Spam (Cloudflare Turnstile)
 
@@ -114,12 +133,12 @@ Turnstile challenge is shown when a user generates a new email for the first tim
 
 Setup:
 1. Create a widget at [Cloudflare Dashboard → Turnstile](https://dash.cloudflare.com/?to=/:account/turnstile)
-2. Add to `.env`:
+2. Add `TURNSTILE_SECRET` to the VM `.env` and `NEXT_PUBLIC_TURNSTILE_SITE_KEY` to Cloudflare Pages build variables:
    ```
    TURNSTILE_SECRET=0x4AAAAAAA...
    NEXT_PUBLIC_TURNSTILE_SITE_KEY=0x4AAAAAAA...
    ```
-3. Rebuild: `docker compose up -d --build`
+3. Redeploy the Pages project and restart the backend: `docker compose up -d --build`
 
 If the env vars are empty, Turnstile is skipped (backward compatible).
 

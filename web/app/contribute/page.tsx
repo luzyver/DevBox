@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { ArrowLeft, Globe, ListChecks, Rocket, CheckCircle, XCircle, Lightbulb, Clock } from '@phosphor-icons/react'
+import { apiUrl } from '../components/api'
 
 type SubmitResult = {
   status: 'active' | 'pending'
@@ -20,7 +21,7 @@ export default function ContributePage() {
 
   useEffect(() => {
     document.title = 'Contribute a Domain | DevBox'
-    fetch('/api/server-info').then(r => r.json()).then(d => setServerIP(d.ip)).catch(() => {})
+    fetch(apiUrl('/api/server-info')).then(r => r.json()).then(d => setServerIP(d.ip)).catch(() => {})
   }, [])
 
   async function handleSubmit(e: React.FormEvent) {
@@ -30,7 +31,7 @@ export default function ContributePage() {
     setError('')
 
     try {
-      const res = await fetch('/api/domains/submit', {
+      const res = await fetch(apiUrl('/api/domains/submit'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ domain: domain.trim().toLowerCase() }),

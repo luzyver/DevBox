@@ -1,6 +1,6 @@
 import { ArrowLeft, X, Paperclip, DownloadSimple, Trash } from '@phosphor-icons/react'
 import { MessageSummary } from './types'
-import { getToken } from './api'
+import { apiUrl, getToken } from './api'
 
 interface Props {
   message: MessageSummary
@@ -16,7 +16,7 @@ function formatSize(bytes: number) {
 
 export function MessageDetailPanel({ message, onClose, onDelete }: Props) {
   const downloadUrl = (attachId: string) =>
-    `/api/inbox/${message.to}/${message.id}/attachment/${attachId}`
+    apiUrl(`/api/inbox/${message.to}/${message.id}/attachment/${attachId}`)
 
   async function handleDownload(attachId: string, filename: string) {
     const res = await fetch(downloadUrl(attachId), {

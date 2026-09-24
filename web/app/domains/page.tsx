@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { Globe, ArrowLeft, CheckCircle } from '@phosphor-icons/react'
+import { apiUrl } from '../components/api'
 
 export default function DomainsPage() {
   const [domains, setDomains] = useState<string[]>([])
@@ -10,7 +11,7 @@ export default function DomainsPage() {
 
   useEffect(() => {
     document.title = 'Active Domains | DevBox'
-    fetch('/api/domains')
+    fetch(apiUrl('/api/domains'))
       .then(r => r.json())
       .then(d => setDomains((d.domains as string).split(',').filter(Boolean).sort()))
       .catch(() => {})
